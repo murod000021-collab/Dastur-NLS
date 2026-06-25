@@ -13,11 +13,14 @@
   var SUPA_KEY='sb_publishable_k3cv4iXrqWFv0HLD1DPkQg_XexqCiQ5';
   var WS='nls', SYNC_RE=/^karo_/, FLAG='karoCloudSession', PENDING='karo_cloud_pending', SEEDED='__meta_seeded';
   var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1 };
-  var _set=localStorage.setItem.bind(localStorage), _get=localStorage.getItem.bind(localStorage);
+  var _set=localStorage.setItem.bind(localStorage), _get=localStorage.getItem.bind(localStorage), _remove=localStorage.removeItem.bind(localStorage);
   var sb=null, ready=false, timers={};
+  // ☁️ REALTIME holati
+  var rtChan=null, everSubbed=false, _applying=false, rerenderTimer=null, rtOk=true;
 
   // Har bir karo_* o'zgarishini bulutga yo'naltiramiz (mahalliy saqlash baribir ishlayveradi)
-  localStorage.setItem=function(k,v){ _set(k,v); try{ if(SYNC_RE.test(k)&&!NO_SYNC[k]){ pend(k,1); if(ready) queue(k); } }catch(e){} };
+  // _applying=true bo'lsa (masofiy o'zgarishni qo'llab qayta-render qilayotganda) qayta push qilmaymiz — echo halqasini oldini oladi
+  localStorage.setItem=function(k,v){ _set(k,v); try{ if(SYNC_RE.test(k)&&!NO_SYNC[k]&&!_applying){ pend(k,1); if(ready) queue(k); } }catch(e){} };
 
   function pend(k,on){ try{ var p=JSON.parse(_get(PENDING)||'{}'); if(on)p[k]=1; else delete p[k]; _set(PENDING,JSON.stringify(p)); }catch(e){} }
   function pendList(){ try{ return Object.keys(JSON.parse(_get(PENDING)||'{}')); }catch(e){ return []; } }
@@ -39,7 +42,7 @@
   function boot(){
     try{ if(!sb && window.supabase && window.supabase.createClient){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); window.__SUPA=sb; } }catch(e){}
     if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
-    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
+    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); startRealtime(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
     sb.auth.getSession().then(function(r){
       var s=r&&r.data?r.data.session:null;
       rememberUser(s);
@@ -57,7 +60,10 @@
       var pl=pendList().filter(function(k){ return SYNC_RE.test(k)&&!NO_SYNC[k]; });
       var ch=Promise.resolve(); pl.forEach(function(k){ ch=ch.then(function(){ return pushNow(k); }); });
       ch.then(function(){
-        rows.forEach(function(x){ if(String(x.k).indexOf('__meta')===0) return; try{ _set(x.k, x.v==null?'':String(x.v)); }catch(e){} });
+        var cloudKeys={};
+        rows.forEach(function(x){ if(String(x.k).indexOf('__meta')===0) return; cloudKeys[x.k]=1; try{ _set(x.k, x.v==null?'':String(x.v)); }catch(e){} });
+        // Bulutda yo'q karo_* kalitlarni mahalliydan ham o'chiramiz (bulut = yagona manba)
+        for(var ri=localStorage.length-1;ri>=0;ri--){ var rk=localStorage.key(ri); if(rk&&SYNC_RE.test(rk)&&!NO_SYNC[rk]&&!cloudKeys[rk]&&pl.indexOf(rk)<0){ try{ _remove(rk); }catch(e){} } }
         sessionStorage.setItem(FLAG,'1'); location.reload();
       });
     }).catch(function(e){ warn('Bulutga ulanmadi — offline (oxirgi nusxa)'); ready=true; });
@@ -70,9 +76,94 @@
     var b=document.getElementById('cloud-seed-btn'); if(b){ b.disabled=true; b.textContent='Yuklanmoqda...'; }
     sb.from('app_data').upsert(rows,{onConflict:'workspace,k'}).then(function(r){
       if(r.error){ alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} return; }
-      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit();
+      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime();
       alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!");
     }).catch(function(e){ alert('Xato: '+e); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} });
+  }
+
+  // ════════════════ ☁️ REALTIME (postgres_changes) ════════════════
+  // Boshqa qurilmadagi har qanday o'zgarish (qo'shish/tahrir/o'chirish) bu yerga
+  // jonli kelib, F5 bosmasdan avtomatik ko'rinadi. Manba — Supabase, localStorage faqat kesh.
+  function activePageId(){ try{ var p=document.querySelector('.page.active'); if(p&&p.id&&p.id.indexOf('page-')===0) return p.id.slice(5); }catch(e){} return null; }
+  function activeNavBtn(){ try{ return document.querySelector('nav button.active'); }catch(e){ return null; } }
+  function busyTyping(){ var a=document.activeElement; return !!(a&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName||''))); }
+
+  // Joriy ochiq sahifani qayta render qiladi (showPage o'sha sahifaning render funksiyalarini qayta chaqiradi)
+  function scheduleRerender(){
+    clearTimeout(rerenderTimer);
+    rerenderTimer=setTimeout(function(){
+      if(busyTyping()){ scheduleRerender(); return; }   // foydalanuvchi forma to'ldiryapti — buzmaymiz, keyinroq yangilaymiz
+      var id=activePageId();
+      _applying=true;
+      try{ if(id && typeof window.showPage==='function') window.showPage(id, activeNavBtn()); }catch(e){}
+      finally{ setTimeout(function(){ _applying=false; }, 0); }
+      flashLive();
+    }, 450);
+  }
+
+  // Masofiy o'zgarishni mahalliy keshga qo'llaydi. Bir xil bo'lsa (o'z echo'imiz) — e'tibor bermaydi.
+  function applyRemote(k, v, isDel){
+    try{
+      if(!SYNC_RE.test(k) || NO_SYNC[k] || String(k).indexOf('__meta')===0) return false;
+      if(isDel){ if(_get(k)!=null){ _remove(k); pend(k,0); return true; } return false; }
+      var nv = (v==null) ? '' : String(v);
+      if(_get(k)===nv) return false;        // o'zgarish yo'q yoki o'z yozuvimiz — tashlab ketamiz
+      _set(k,nv); pend(k,0);                  // keshni yangilaymiz, lekin QAYTA PUSH qilmaymiz
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // To'liq qayta tortish (boot'dan keyin: internet uzilib qaytsa yoki qayta ulanishda)
+  function pullAll(isBoot){
+    if(!sb) return;
+    try{
+      sb.from('app_data').select('k,v').eq('workspace',WS).then(function(r){
+        if(!r||r.error) return;
+        var rows=r.data||[], changed=false, removed=false, cloudKeys={}, pend0=pendList();
+        rows.forEach(function(x){ var meta=(String(x.k).indexOf('__meta')===0); if(!meta) cloudKeys[x.k]=1; if(meta||pend0.indexOf(x.k)>=0) return; if(applyRemote(x.k, x.v, false)) changed=true; });
+        // Bulutda yo'q karo_* kalitlar = boshqa joyda o'chirilgan -> mahalliydan olib tashlaymiz
+        for(var pi=localStorage.length-1;pi>=0;pi--){ var pk=localStorage.key(pi); if(pk&&SYNC_RE.test(pk)&&!NO_SYNC[pk]&&!cloudKeys[pk]&&pend0.indexOf(pk)<0){ try{ _remove(pk); pend(pk,0); removed=true; }catch(e){} } }
+        if(removed || (isBoot && changed)){ location.reload(); return; }
+        if(changed) scheduleRerender();
+      }).catch(function(){});
+    }catch(e){}
+  }
+
+  function startRealtime(){
+    if(!sb || rtChan) return;
+    try{
+      sb.auth.getSession().then(function(r){
+        try{ var t=r&&r.data&&r.data.session?r.data.session.access_token:null; if(t&&sb.realtime&&sb.realtime.setAuth) sb.realtime.setAuth(t); }catch(e){}
+        subscribeRT();
+      }).catch(function(){ subscribeRT(); });
+    }catch(e){ subscribeRT(); }
+  }
+  function subscribeRT(){
+    if(rtChan) return;
+    try{
+      rtChan=sb.channel('rt_app_data_'+WS)
+        .on('postgres_changes', {event:'*', schema:'public', table:'app_data', filter:'workspace=eq.'+WS}, function(p){
+          try{
+            var changed=false;
+            if(p.eventType==='DELETE'){ var ok=p.old; if(ok&&ok.k) changed=applyRemote(ok.k, null, true); }
+            else { var nw=p.new; if(nw&&nw.k) changed=applyRemote(nw.k, nw.v, false); }
+            if(changed) scheduleRerender();
+          }catch(e){}
+        })
+        .subscribe(function(status){
+          if(status==='SUBSCRIBED'){
+            rtOk=true; chipRest(); var c0=document.getElementById('cloud-chip'); if(c0) c0.title='Bulut ishlayapti — jonli ulangan · bosib chiqish';
+            if(everSubbed){ pullAll(); } everSubbed=true;   // qayta ulandik — yo'qotilganlarni tortamiz
+          } else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
+            rtOk=false; chipRest(); var c1=document.getElementById('cloud-chip'); if(c1) c1.title='Jonli ulanish uzildi — qayta ulanmoqda';
+          }
+        });
+    }catch(e){}
+  }
+  function flashLive(){
+    var c=document.getElementById('cloud-chip'); if(!c) return;
+    c.style.background='#e7f0ff'; c.style.color='#1457c4'; c.style.borderColor='#aecbf5'; c.textContent='☁️ Yangilandi';
+    clearTimeout(c._t); c._t=setTimeout(function(){ chipRest(); },1600);
   }
 
   function showLogin(){
@@ -100,14 +191,24 @@
     if(document.getElementById('cloud-chip')) return;
     var c=document.createElement('div'); c.id='cloud-chip';
     c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
-    c.textContent='☁️ Bulut yoqilgan'; c.title='Bulutdan chiqish (bu qurilmada)';
+    c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish';
     c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ sessionStorage.removeItem(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
-  function chip(s){ var c=document.getElementById('cloud-chip'); if(!c) return; if(s==='ok'){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Saqlandi'; clearTimeout(c._t); c._t=setTimeout(function(){ c.textContent='☁️ Bulut yoqilgan'; },1200); } else if(s==='err'){ c.style.background='#fdecea';c.style.color='#c0392b';c.style.borderColor='#f5c6cb';c.textContent='☁️ Ulanish xato'; } }
-  function warn(m){ chipInit(); var c=document.getElementById('cloud-chip'); if(c){ c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Offline'; c.title=m; } }
+  function chipRest(){ var c=document.getElementById('cloud-chip'); if(!c) return; if(rtOk){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish'; } else { c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; } }
+  function chip(s){ var c=document.getElementById('cloud-chip'); if(!c) return; if(s==='ok'){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Saqlandi'; clearTimeout(c._t); c._t=setTimeout(function(){ chipRest(); },1200); } else if(s==='err'){ c.style.background='#fdecea';c.style.color='#c0392b';c.style.borderColor='#f5c6cb';c.textContent='☁️ Saqlanmadi'; } }
+  function warn(m){ rtOk=false; chipInit(); var c=document.getElementById('cloud-chip'); if(c){ c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; c.title=m||'Bulutga ulanmadi'; } }
 
-  window.addEventListener('online',function(){ if(ready) flush(); });
+  // Bulutdan (Supabase) kalitlarni o'chirish - admin "tozalash" boshqa qurilmalarga realtime DELETE bo'lib boradi
+  function delKeys(keys){
+    if(!sb || !keys || !keys.length) return Promise.resolve();
+    var list=[]; keys.forEach(function(k){ if(SYNC_RE.test(k)&&!NO_SYNC[k]){ list.push(k); pend(k,0); try{ _remove(k); }catch(e){} } });
+    if(!list.length) return Promise.resolve();
+    function emptyFallback(){ var rows=list.map(function(k){ return {workspace:WS,k:k,v:'',updated_at:new Date().toISOString()}; }); return sb.from('app_data').upsert(rows,{onConflict:'workspace,k'}).then(function(){}).catch(function(){}); }
+    return sb.from('app_data').delete().eq('workspace',WS).in('k',list).then(function(r){ if(r&&r.error){ return emptyFallback(); } }).catch(function(){ return emptyFallback(); });
+  }
+  window.__CLOUD={ del:delKeys, pull:function(){ pullAll(); }, ready:function(){ return ready; } };
+  window.addEventListener('online',function(){ if(ready){ flush(); pullAll(); } });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
@@ -4531,7 +4632,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // ===== BIR MARTALIK TOZALASH (10.06.2026) =====
 // Eski buyurtmalar zanjiri va xizmatlar yozuvlarini bir marta tozalaydi.
 // Ombor rulonlari, yetkazuvchi qarzi, qarzdorlar, kassa, kirim-chiqim, ishchilar saqlanib qoladi.
-(function oneTimeCleanup() {
+(function oneTimeCleanup() { return; /* DISABLED: Supabase = yagona manba */
   var FLAG = 'karo_tozalash_20260610';
   if (localStorage.getItem(FLAG)) return;
   [
@@ -4550,7 +4651,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // ===== TO'LIQ TOZALASH — ISHGA TUSHIRISH (10.06.2026) =====
 // Test rejimidagi BARCHA ma'lumotlarni bir marta to'liq tozalaydi.
 // Faqat narx sozlamalari (kalkulyator) saqlanib qoladi. Hisobotlar 0 dan boshlanadi.
-(function fullResetV3() {
+(function fullResetV3() { return; /* DISABLED: Supabase = yagona manba */
   var FLAG = 'karo_tozalash_v3_full_20260610';
   if (localStorage.getItem(FLAG)) return;
   [
@@ -4577,7 +4678,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // ===== BIR MARTALIK TOZALASH №2 (10.06.2026) =====
 // Test rejimidagi prixod tarixi, ombor qoldiqlari va qarzdorlarni bir marta tozalaydi.
 // Yetkazuvchi qarzi, kassa, kirim-chiqim, ishchilar, sozlamalar saqlanib qoladi.
-(function oneTimeCleanupV2() {
+(function oneTimeCleanupV2() { return; /* DISABLED: Supabase = yagona manba */
   var FLAG = 'karo_tozalash_v2_20260610';
   if (localStorage.getItem(FLAG)) return;
   [
@@ -4597,7 +4698,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // avtomatik o'chiriladi (buyurtmalar, ishlab chiqarish, ombor, qarzlar, qarzdorlar,
 // kassa, kirim-chiqim, ishchilar, tarix...). Faqat narx sozlamalari saqlanadi.
 // Bir marta ishlaydi (flag), keyin kiritilgan haqiqiy ma'lumotlar o'chmaydi.
-(function freshStart20260616() {
+(function freshStart20260616() { return; /* DISABLED: Supabase = yagona manba */
   var FLAG = 'karo_fresh_20260616';
   if (localStorage.getItem(FLAG)) return;
   var keep = { 'karo_sozlamalar': 1 }; // narx sozlamalari saqlanadi
@@ -4614,6 +4715,21 @@ document.addEventListener('DOMContentLoaded',function(){
   toRemove.forEach(function(k){ localStorage.removeItem(k); });
   localStorage.setItem(FLAG, new Date().toISOString());
 })();
+
+// ===== ESKI LOKAL KESHNI TOZALASH (ishga tushganda) - Supabase = yagona manba =====
+// localStorage endi faqat vaqtinchalik kesh: haqiqiy ma'lumot har doim bulutdan yuklanadi.
+// Bu funksiya ishga tushganda eski bir martalik tozalash flaglarini olib tashlaydi.
+function clearOldCache(){
+  try{
+    var obsolete=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i); if(!k) continue;
+      if(k.indexOf('karo_tozalash')===0 || k.indexOf('karo_fresh_')===0 || k.indexOf('karo_fix')===0) obsolete.push(k);
+    }
+    obsolete.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  }catch(e){}
+}
+clearOldCache();
 
 let orders = safeJSON('karo_orders', '[]');
 let productions = safeJSON('karo_productions','[]');
@@ -7250,10 +7366,16 @@ function clearAllData() {
   if (!confirm("Quyidagi bo'limlar BUTUNLAY o'chiriladi:\n\n• " + labels.join("\n• ") + "\n\nNarx sozlamalari saqlanadi. Bu amalni ortga qaytarib bo'lmaydi!\nDavom etilsinmi?")) return;
   var keys = {};
   cats.forEach(function(c){ c.keys.forEach(function(k){ keys[k] = 1; }); });
+  var keyList = Object.keys(keys);
   var removed = 0;
-  Object.keys(keys).forEach(function(k){ if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); removed++; } });
-  alert("✅ Tanlangan " + cats.length + " ta bo'lim tozalandi. Sahifa yangilanadi.");
-  location.reload();
+  keyList.forEach(function(k){ if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); removed++; } });
+  function _clrFinish(){
+    alert("✅ Tanlangan " + cats.length + " ta bo'lim tozalandi (bulutdan ham o'chirildi). Sahifa yangilanadi.");
+    location.reload();
+  }
+  // Bulutdan (Supabase) ham o'chiramiz — shunda barcha xodimlar qurilmasida ham bo'shaydi (refresh'dan keyin)
+  if (window.__CLOUD && window.__CLOUD.del) { window.__CLOUD.del(keyList).then(_clrFinish, _clrFinish); }
+  else { _clrFinish(); }
 }
 
 // 🧮 [HISOB/NARX] Ofset pechat narxini tiraj bo'yicha hisoblaydi
@@ -19048,7 +19170,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.17';
+  var APP_VERSION = '1.20';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
@@ -19817,4 +19939,5 @@ updateProdBadge();
 })();
 
 </script>
+
 </body></html>
