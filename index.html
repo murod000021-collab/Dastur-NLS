@@ -56,7 +56,13 @@
     sb.from('app_data').select('k,v').eq('workspace',WS).then(function(r){
       if(r.error) throw r.error;
       var rows=r.data||[];
-      if(!rows.some(function(x){ return x.k===SEEDED; })){ seedBanner(); return; }
+      if(!rows.some(function(x){ return x.k===SEEDED; })){
+        // Bulut hali to'ldirilmagan. Ma'lumotli qurilma bo'lsa — AVTOMATIK yuklaymiz (tugma kutmaymiz):
+        // shuning uchun admin login qilishi bilanoq barcha ma'lumot Supabase app_data jadvaliga yoziladi.
+        // Bo'sh qurilma esa asosiy kompyuter ma'lumot yuklashini kutadi (xavfsiz: bo'sh qurilma bulutni egallab, real datani o'chirmaydi).
+        if(hasData()) uploadAll(true); else seedBanner();
+        return;
+      }
       var pl=pendList().filter(function(k){ return SYNC_RE.test(k)&&!NO_SYNC[k]; });
       var ch=Promise.resolve(); pl.forEach(function(k){ ch=ch.then(function(){ return pushNow(k); }); });
       ch.then(function(){
@@ -69,16 +75,25 @@
     }).catch(function(e){ warn('Bulutga ulanmadi — offline (oxirgi nusxa)'); ready=true; });
   }
 
-  function uploadAll(){
+  // auto=true → admin login qilganda avtomatik (bannersiz, alertsiz) bulutni shu qurilma ma'lumoti bilan to'ldiradi.
+  function uploadAll(auto){
     if(!sb) return; var rows=[];
     for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(SYNC_RE.test(k)&&!NO_SYNC[k]) rows.push({workspace:WS,k:k,v:_get(k),updated_at:new Date().toISOString()}); }
     rows.push({workspace:WS,k:SEEDED,v:'1',updated_at:new Date().toISOString()});
     var b=document.getElementById('cloud-seed-btn'); if(b){ b.disabled=true; b.textContent='Yuklanmoqda...'; }
     sb.from('app_data').upsert(rows,{onConflict:'workspace,k'}).then(function(r){
-      if(r.error){ alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} return; }
+      if(r.error){
+        // Eng ko'p sabab: app_data jadvali yo'q yoki RLS yozishni bloklayapti → SQL ni dashboard'da Run qiling.
+        if(auto){ ready=true; warn('Bulutga yozilmadi: '+(r.error.message||'')+' — Supabase SQL/RLS ni tekshiring'); }
+        else { alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} }
+        return;
+      }
       _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime();
-      alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!");
-    }).catch(function(e){ alert('Xato: '+e); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} });
+      if(auto){ chip('ok'); } else { alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!"); }
+    }).catch(function(e){
+      if(auto){ ready=true; warn('Bulutga yozilmadi — internet yoki Supabase SQL ni tekshiring'); }
+      else { alert('Xato: '+e); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} }
+    });
   }
 
   // ════════════════ ☁️ REALTIME (postgres_changes) ════════════════
@@ -215,7 +230,8 @@
     function emptyFallback(){ var rows=list.map(function(k){ return {workspace:WS,k:k,v:'',updated_at:new Date().toISOString()}; }); return sb.from('app_data').upsert(rows,{onConflict:'workspace,k'}).then(function(){}).catch(function(){}); }
     return sb.from('app_data').delete().eq('workspace',WS).in('k',list).then(function(r){ if(r&&r.error){ return emptyFallback(); } }).catch(function(){ return emptyFallback(); });
   }
-  window.__CLOUD={ del:delKeys, pull:function(){ pullAll(); }, ready:function(){ return ready; } };
+  // reseed() — admin asosiy qurilmadan bulutni shu qurilma ma'lumoti bilan MAJBURIY qayta to'ldiradi (zaxira yo'l).
+  window.__CLOUD={ del:delKeys, pull:function(){ pullAll(); }, reseed:function(){ uploadAll(true); }, ready:function(){ return ready; } };
   window.addEventListener('online',function(){ if(ready){ flush(); pullAll(); } });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
@@ -19178,7 +19194,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.21';
+  var APP_VERSION = '1.22';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
