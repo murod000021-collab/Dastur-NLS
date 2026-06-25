@@ -2646,6 +2646,7 @@
       <div class="stat-card orange"><div class="label">Sarflangan rulonlar</div><div class="value" id="gofra-stat-avail">0</div><div class="sub">dona (tugagan)</div></div>
       <div class="stat-card" style="border-left-color:#7e57c2"><div class="label">📅 Shu oy ishlatilgan</div><div class="value" id="gofra-stat-month" style="color:#5e35b1">0</div><div class="sub" id="gofra-stat-month-sub">kg (oy boshidan)</div></div>
       <div class="stat-card red"><div class="label">Ombor qiymati</div><div class="value" id="gofra-stat-val" style="font-size:1.3rem">0</div><div class="sub">so'm</div></div>
+      <div class="stat-card" style="border-left-color:#e67e22"><div class="label">⚖️ O'rtacha narx (1 kg)</div><div class="value" id="gofra-stat-avg" style="font-size:1.3rem;color:#c4620d">0</div><div class="sub">so'm/kg — bizga aylanvotti</div></div>
     </div>
     <div class="card">
       <div class="flex-between">
@@ -2664,7 +2665,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>Sana</th><th>Yetkazuvchi</th><th>Format (sm)</th><th>Gramaj (g/m²)</th><th>Boshlang'ich (kg)</th><th>Sarflangan (kg)</th><th>Qolgan (kg)</th><th>Holat</th><th>Amal</th></tr>
+            <tr><th>#</th><th>Sana</th><th>Yetkazuvchi</th><th>Format (sm)</th><th>Gramaj (g/m²)</th><th>1 kg narxi</th><th>Boshlang'ich (kg)</th><th>Sarflangan (kg)</th><th>Qolgan (kg)</th><th>Holat</th><th>Amal</th></tr>
           </thead>
           <tbody id="gofra-table"></tbody>
         </table>
@@ -8731,6 +8732,16 @@ function renderGofraStock() {
   document.getElementById('gofra-stat-avail').textContent = gofraRolls.filter(r=>r.status!=='mavjud').length;
   const gofraVal = Math.round(gofraRolls.filter(r=>r.status==='mavjud').reduce((s,r)=>s+r.remaining*(r.pricePerKg||0),0));
   document.getElementById('gofra-stat-val').textContent = gofraVal.toLocaleString('uz-UZ');
+  // ⚖️ O'rtacha narx (1 kg) — mavjud gofra qog'oz qancha puldan aylanvotti (qiymat ÷ qolgan kg)
+  (function(){
+    var avgEl = document.getElementById('gofra-stat-avg');
+    if (!avgEl) return;
+    var totKg = gofraMavjud.reduce(function(s,r){ return s + (r.remaining||0); }, 0);
+    var avg = totKg > 0 ? Math.round(gofraVal / totKg) : 0;
+    // Mavjud rulonlar narxsiz bo'lsa — barcha rulonlardan o'rtacha (avgRollKgPrice)
+    if (!avg && typeof avgRollKgPrice === 'function') avg = Math.round(avgRollKgPrice(gofraRolls, 0));
+    avgEl.textContent = avg.toLocaleString('uz-UZ');
+  })();
 
   // 📅 Shu oy boshidan ishlatilgan gofra (kg) — rasxod jurnalidan (haqiqiy ayirilgan kg)
   (function(){
@@ -8758,7 +8769,7 @@ function renderGofraStock() {
   })();
 
   const tbody = document.getElementById('gofra-table');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" class="text-muted" style="text-align:center;padding:20px">Gofra qog\'oz yo\'q</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:20px">Gofra qog\'oz yo\'q</td></tr>'; return; }
   tbody.innerHTML = list.map((r, i) => `
     <tr>
       <td>${i+1}</td>
@@ -8766,6 +8777,7 @@ function renderGofraStock() {
       <td>${r.supplier || '—'}</td>
       <td><b>${r.format} sm</b></td>
       <td>${r.gramm || 120} g/m²</td>
+      <td style="color:#e65100;font-weight:700;white-space:nowrap">${r.pricePerKg ? r.pricePerKg.toLocaleString('uz-UZ')+' so\'m' : '—'}</td>
       <td>${r.weight} kg</td>
       <td><b style="color:#c0392b">${Math.max(0, (r.weight||0) - (r.remaining||0)).toFixed(1)} kg</b></td>
       <td><b>${r.remaining.toFixed(1)} kg</b>${r.oyTuzatish?` <span title="${(r.oyTuzatishNote||'').replace(/"/g,'&quot;')}" style="color:#c0392b;font-size:0.72rem;cursor:help;white-space:nowrap">📋➖</span>`:''}</td>
@@ -18962,7 +18974,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.15';
+  var APP_VERSION = '1.16';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
