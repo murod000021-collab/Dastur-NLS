@@ -1144,6 +1144,7 @@
   <button onclick="showPage('ai',this)"><sn>N13c</sn>🤖 AI Yordamchi</button>
   <button onclick="showPage('planned',this)"><sn>N13e</sn>📅 Kutilayotgan xarajatlar</button>
   <button onclick="showPage('kalkulyator',this)"><sn>N14</sn>🧮 Kalkulyator</button>
+  <button onclick="showPage('chempionat',this)"><sn>N14b</sn>⚽ Jahon chempionati</button>
   <div style="flex:1"></div>
   <button onclick="showPage('trash',this)" id="nav-trash"><sn>N15</sn>🗑 O'chirilgan buyurtmalar</button>
   <button onclick="showPage('sozlamalar',this)"><sn>N16</sn>⚙️ Sozlamalar</button>
@@ -1658,6 +1659,12 @@
     <div class="form-group" id="erm-remaining-group" style="margin-bottom:12px">
       <label id="erm-remaining-label">Qolgan miqdor</label>
       <input type="number" id="erm-remaining" min="0" placeholder="0">
+    </div>
+    <!-- 💰 1 kg narxi (gofra / oq-rulon) — to'g'rilash uchun -->
+    <div class="form-group" id="erm-price-group" style="margin-bottom:12px;display:none">
+      <label style="color:#e65100;font-weight:700">💰 1 kg narxi (so'm)</label>
+      <input type="number" id="erm-price" min="0" placeholder="0" style="border-color:#f0a868">
+      <div id="erm-price-hint" style="font-size:0.78rem;color:#888;margin-top:5px"></div>
     </div>
     <!-- Faqat oq-kesilgan uchun -->
     <div id="erm-kesilgan-extra" style="display:none">
@@ -2273,8 +2280,8 @@
 
   <!-- Sub-tabs -->
   <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <button class="btn" id="wtab-oqreq" onclick="showWTab('oqreq')" style="background:#f0f4f8;color:#1a3c5e;position:relative"><sn>T1</sn>🔔 Oq qog'oz so'rovlari<span id="oqreq-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e02020;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:0.7rem;font-weight:800;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff"></span></button>
-    <button class="btn" id="wtab-prixod" onclick="showWTab('prixod')" style="background:#f0f4f8;color:#1a3c5e"><sn>T2</sn>📥 Prixod qilish</button>
+    <button class="btn" id="wtab-prixod" onclick="showWTab('prixod')" style="background:#f0f4f8;color:#1a3c5e"><sn>T1</sn>📥 Prixod qilish</button>
+    <button class="btn" id="wtab-oqreq" onclick="showWTab('oqreq')" style="background:#f0f4f8;color:#1a3c5e;position:relative"><sn>T2</sn>🔔 Oq qog'oz so'rovlari<span id="oqreq-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e02020;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:0.7rem;font-weight:800;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff"></span></button>
     <button class="btn" id="wtab-rasxod" onclick="showWTab('rasxod')" style="background:#f0f4f8;color:#1a3c5e"><sn>T3</sn>📉 Rasxod</button>
     <button class="btn" id="wtab-tayyor" onclick="showWTab('tayyor')" style="background:#2d6a9f;color:white;position:relative"><sn>T4</sn>✅ Tayyor mahsulotlar<span id="tayyor-badge" style="display:none;position:absolute;top:-7px;right:-7px;background:#e02020;color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:0.7rem;font-weight:800;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff"></span></button>
     <button class="btn" id="wtab-yarimtayyor" onclick="showWTab('yarimtayyor')" style="background:#f0f4f8;color:#1a3c5e"><sn>T4b</sn>🏗️ Yarim tayyor mahsulotlar</button>
@@ -3931,6 +3938,20 @@
   </div>
 </div>
 
+<!-- ⚽ JAHON CHEMPIONATI — futbol natijalari (sport-express.ru) -->
+<div id="page-chempionat" class="page">
+  <div class="card" style="max-width:1150px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <h2 style="margin:0">⚽ Jahon chempionati 2026 — natijalar va turnir jadvali</h2>
+      <a href="https://www.sport-express.ru/football/L/world/tables/2026/" target="_blank" rel="noopener noreferrer" style="padding:9px 18px;border-radius:9px;background:#27ae60;color:#fff;font-weight:800;text-decoration:none;white-space:nowrap">🔗 Yangi oynada ochish</a>
+    </div>
+    <p style="font-size:0.82rem;color:#888;margin:0 0 12px">Manba: <b>sport-express.ru</b>. Agar natijalar quyida ko'rinmasa (sayt himoyasi sabab bo'sh qolsa), yuqoridagi <b>«🔗 Yangi oynada ochish»</b> tugmasini bosing.</p>
+    <div style="border:1.5px solid #dce3ea;border-radius:12px;overflow:hidden;background:#fff">
+      <iframe id="chmp-frame" data-src="https://www.sport-express.ru/football/L/world/tables/2026/" title="Jahon chempionati 2026 natijalari" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:78vh;min-height:520px;border:0;display:block"></iframe>
+    </div>
+  </div>
+</div>
+
 <!-- SOZLAMALAR -->
 <div id="page-sozlamalar" class="page">
   <main>
@@ -4631,6 +4652,7 @@ function showPage(id, btn) {
   if (id === 'ai') { if (window.AI && AI.renderPage) AI.renderPage(); }
   if (id === 'planned') { if (typeof renderPlannedExp === 'function') renderPlannedExp(); }
   if (id === 'kalkulyator') kalkInit();
+  if (id === 'chempionat') { var _cf=document.getElementById('chmp-frame'); if(_cf && !_cf.src) _cf.src=_cf.getAttribute('data-src'); }
   if (id === 'trash') renderTrash();
   if (id === 'sozlamalar') { loadSozlamalarInputs(); if (typeof renderPurgeOptions === 'function') renderPurgeOptions(); if (window.FX && FX.syncUI) FX.syncUI(); }
 }
@@ -7856,6 +7878,9 @@ function editBoshqa(id) {
   document.getElementById('erm-fayl').value     = r.fayl || '';
   document.getElementById('erm-remaining').value = r.qty;
   document.getElementById('erm-remaining-label').textContent = 'Miqdori (' + r.unit + ')';
+  var _pg = document.getElementById('erm-price-group'); if (_pg) _pg.style.display = 'none';
+  var _ex = document.getElementById('erm-kesilgan-extra'); if (_ex) _ex.style.display = 'none';
+  var _rg = document.getElementById('erm-remaining-group'); if (_rg) _rg.style.display = 'block';
   document.getElementById('edit-roll-modal').style.display = 'flex';
 }
 
@@ -9371,9 +9396,11 @@ function editRoll(type, id) {
 
   const extra = document.getElementById('erm-kesilgan-extra');
   const remGroup = document.getElementById('erm-remaining-group');
+  const priceGroup = document.getElementById('erm-price-group');
   if (isKesilgan) {
     extra.style.display = 'block';
     remGroup.style.display = 'none';
+    if (priceGroup) priceGroup.style.display = 'none';   // kesilganda narx «Jami summa» orqali boshqariladi
     document.getElementById('erm-kg').value  = r.calcKgRemaining != null ? r.calcKgRemaining : (r.calcKg || '');
     var ermSum = document.getElementById('erm-sum');
     ermSum.value = r.totalSum || '';
@@ -9385,6 +9412,13 @@ function editRoll(type, id) {
   } else {
     extra.style.display = 'none';
     remGroup.style.display = 'block';
+    // 💰 Gofra / oq-rulon — 1 kg narxini shu yerdan to'g'rilash mumkin
+    if (priceGroup) priceGroup.style.display = 'block';
+    var priceEl = document.getElementById('erm-price');
+    if (priceEl) priceEl.value = (r.pricePerKg != null ? r.pricePerKg : '');
+    var hintEl = document.getElementById('erm-price-hint');
+    if (hintEl) hintEl.textContent = 'Joriy: ' + (r.pricePerKg || 0).toLocaleString('uz-UZ') + ' so\'m/kg'
+      + (r.debtId != null ? ' · narx o\'zgarsa, yetkazuvchi qarzi ham to\'g\'rilanadi' : '');
   }
   document.getElementById('edit-roll-modal').style.display = 'flex';
 }
@@ -9431,6 +9465,27 @@ function saveEditRoll() {
   } else {
     r.remaining = newRemaining;
     r.status    = newRemaining <= 0 ? 'sarflangan' : 'mavjud';
+    // 💰 1 kg narxini to'g'rilash (gofra / oq-rulon)
+    var priceEl = document.getElementById('erm-price');
+    if (priceEl && priceEl.value !== '') {
+      var newPrice = parseFloat(priceEl.value) || 0;
+      var oldPrice = r.pricePerKg || 0;
+      if (newPrice !== oldPrice) {
+        r.pricePerKg = newPrice;
+        // Prixodda yaratilgan yetkazuvchi qarzini shu rulon ulushiga qarab to'g'rilaymiz
+        if (r.debtId != null && typeof yetqarzlar !== 'undefined') {
+          var dRec = yetqarzlar.find(function(y){ return y.id === r.debtId; });
+          if (dRec) {
+            var basisKg = (parseFloat(r.weight) || parseFloat(r.remaining) || 0);
+            var delta = Math.round((newPrice - oldPrice) * basisKg);
+            dRec.amount = Math.max(0, Math.round((dRec.amount || 0) + delta));
+            if (dRec.kg > 0) dRec.perKg = Math.round(dRec.amount / dRec.kg);
+            dRec.note = (dRec.note || '') + ' · 🔧 narx tuzatildi (' + oldPrice.toLocaleString('uz-UZ') + '→' + newPrice.toLocaleString('uz-UZ') + ')';
+            if (typeof saveYetqarz === 'function') saveYetqarz();
+          }
+        }
+      }
+    }
   }
 
   // arrivals yozuvini ham yangilaymiz (agar mos kelsa)
@@ -9449,7 +9504,11 @@ function saveEditRoll() {
   if (type === 'gofra') renderGofraStock();
   else if (type === 'boshqa') renderBoshqaStock();
   else renderOqStock();
-  showAlert('Muvaffaqiyatli saqlandi!', 'success');
+  // Narx o'zgargan bo'lsa — qarz, ombor qiymati va dashboard ham yangilanadi
+  if (typeof renderYetqarz === 'function') renderYetqarz();
+  if (typeof renderOmborSiryo === 'function') renderOmborSiryo();
+  if (typeof updateDashboard === 'function') updateDashboard();
+  showAlert('✅ Saqlandi!', 'success');
 }
 
 function deleteRoll(type, id) {
@@ -18903,7 +18962,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.13';
+  var APP_VERSION = '1.15';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
