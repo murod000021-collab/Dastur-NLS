@@ -126,11 +126,10 @@
         // ⚠️ Reload-tsikl oldini olish: boot paytidagi reload har bir oynada FAQAT BIR MARTA.
         // (dastur yuklanganda ba'zi qiymatlar qayta hisoblanadi → bulutdan biroz farq qiladi;
         //  aks holda har reload yana farq topib, cheksiz qayta-yuklanib qolardi — "prillab" turardi.)
-        if(removed || (isBoot && changed)){
-          if(isBoot){
-            if(sessionStorage.getItem('karo_boot_reload')==='1'){ if(changed) scheduleRerender(); return; }
-            try{ sessionStorage.setItem('karo_boot_reload','1'); }catch(e){}
-          }
+        if(removed){
+          // o'chirilgan ma'lumotni qo'llash uchun reload, har sessiyada FAQAT BIR MARTA (F5 halqasini oldini oladi)
+          if(sessionStorage.getItem('karo_boot_reload')==='1'){ if(changed) scheduleRerender(); return; }
+          try{ sessionStorage.setItem('karo_boot_reload','1'); }catch(e){}
           location.reload(); return;
         }
         if(changed) scheduleRerender();
@@ -4735,7 +4734,7 @@ function clearOldCache(){
       var k=localStorage.key(i); if(!k) continue;
       if(k.indexOf('karo_tozalash')===0 || k.indexOf('karo_fresh_')===0 || k.indexOf('karo_fix')===0) obsolete.push(k);
     }
-    obsolete.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+    /* Eski flaglar bulutda ham bor va zararsiz - ularni o'chirmaymiz (aks holda har yuklanishda bulut bilan ziddiyat = F5 halqasi) */
   }catch(e){}
 }
 clearOldCache();
