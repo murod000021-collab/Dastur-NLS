@@ -5488,7 +5488,7 @@ function addOrder() {
       tip: 'kirim',
       category: 'avans',
       catLabel: XR_CAT_LABELS['avans'],
-      name: 'Buyurtma #' + order.orderNum + ' avans — ' + client,
+      name: "🟢 Oldindan to'lov · Buyurtma #" + order.orderNum,
       supplier: client,
       fayl: '',
       amount: order.avans,
@@ -12753,6 +12753,15 @@ function computeBalans() {
   if (typeof savdolar !== 'undefined' && typeof svBalance === 'function') {
     predoplata = Math.round(savdolar.reduce(function(s,x){ return s + (svBalance(x).prepay || 0); }, 0));
   }
+  // 🟢 Buyurtma qabulida olingan oldindan to'lov (avans) — hali ishlab chiqarishga (savdoga) o'tmagan
+  //    'pending' buyurtmalar uchun ham predoplata sifatida hisoblanadi. Buyurtma jarayonga o'tib
+  //    savdo yaratilganda u savdo prepay'iga o'tadi (pending bo'lmagani uchun) — ikki marta sanalmaydi.
+  if (typeof orders !== 'undefined' && orders) {
+    orders.forEach(function(o){
+      if (o.status !== 'pending') return;
+      predoplata += Math.round(parseFloat(o.avans) || 0);
+    });
+  }
   // 🏗️ Yarim tayyor mahsulot (WIP): ishlab chiqarishda ombordan ayrilgan siryo qiymati.
   //    matCost — buyurtmaning JORIY yarim tayyor qiymati: siryo ayrilganda ortadi,
   //    mahsulot omborga (tayyor) o'tganda ayiriladi (u tVal'da sanaladi) — ikki marta sanalmaydi.
@@ -18894,7 +18903,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.12';
+  var APP_VERSION = '1.13';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
