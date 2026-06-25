@@ -123,7 +123,16 @@
         rows.forEach(function(x){ var meta=(String(x.k).indexOf('__meta')===0); if(!meta) cloudKeys[x.k]=1; if(meta||pend0.indexOf(x.k)>=0) return; if(applyRemote(x.k, x.v, false)) changed=true; });
         // Bulutda yo'q karo_* kalitlar = boshqa joyda o'chirilgan -> mahalliydan olib tashlaymiz
         for(var pi=localStorage.length-1;pi>=0;pi--){ var pk=localStorage.key(pi); if(pk&&SYNC_RE.test(pk)&&!NO_SYNC[pk]&&!cloudKeys[pk]&&pend0.indexOf(pk)<0){ try{ _remove(pk); pend(pk,0); removed=true; }catch(e){} } }
-        if(removed || (isBoot && changed)){ location.reload(); return; }
+        // ⚠️ Reload-tsikl oldini olish: boot paytidagi reload har bir oynada FAQAT BIR MARTA.
+        // (dastur yuklanganda ba'zi qiymatlar qayta hisoblanadi → bulutdan biroz farq qiladi;
+        //  aks holda har reload yana farq topib, cheksiz qayta-yuklanib qolardi — "prillab" turardi.)
+        if(removed || (isBoot && changed)){
+          if(isBoot){
+            if(sessionStorage.getItem('karo_boot_reload')==='1'){ if(changed) scheduleRerender(); return; }
+            try{ sessionStorage.setItem('karo_boot_reload','1'); }catch(e){}
+          }
+          location.reload(); return;
+        }
         if(changed) scheduleRerender();
       }).catch(function(){});
     }catch(e){}
@@ -19170,7 +19179,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.20';
+  var APP_VERSION = '1.21';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
