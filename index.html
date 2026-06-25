@@ -1,9 +1,106 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- saved from url=(0049)file:///C:/Users/user/Desktop/karobka_dastur.html -->
 <html lang="uz"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NLS BOX Hisobot</title>
+<!-- ☁️ CLOUD SYNC (Supabase) — bulutli baza qatlami -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  'use strict';
+  var SUPA_URL='https://yuhhdgjtynulzrbqvkqg.supabase.co';
+  var SUPA_KEY='sb_publishable_k3cv4iXrqWFv0HLD1DPkQg_XexqCiQ5';
+  var WS='nls', SYNC_RE=/^karo_/, FLAG='karoCloudSession', PENDING='karo_cloud_pending', SEEDED='__meta_seeded';
+  var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1 };
+  var _set=localStorage.setItem.bind(localStorage), _get=localStorage.getItem.bind(localStorage);
+  var sb=null, ready=false, timers={};
+
+  // Har bir karo_* o'zgarishini bulutga yo'naltiramiz (mahalliy saqlash baribir ishlayveradi)
+  localStorage.setItem=function(k,v){ _set(k,v); try{ if(SYNC_RE.test(k)&&!NO_SYNC[k]){ pend(k,1); if(ready) queue(k); } }catch(e){} };
+
+  function pend(k,on){ try{ var p=JSON.parse(_get(PENDING)||'{}'); if(on)p[k]=1; else delete p[k]; _set(PENDING,JSON.stringify(p)); }catch(e){} }
+  function pendList(){ try{ return Object.keys(JSON.parse(_get(PENDING)||'{}')); }catch(e){ return []; } }
+  function queue(k){ clearTimeout(timers[k]); timers[k]=setTimeout(function(){ push(k); },700); }
+  function push(k){ if(!sb) return; sb.from('app_data').upsert({workspace:WS,k:k,v:_get(k),updated_at:new Date().toISOString()},{onConflict:'workspace,k'}).then(function(r){ if(r&&r.error){ chip('err'); } else { pend(k,0); chip('ok'); } }).catch(function(){ chip('err'); }); }
+  function pushNow(k){ if(!sb) return Promise.resolve(); return sb.from('app_data').upsert({workspace:WS,k:k,v:_get(k),updated_at:new Date().toISOString()},{onConflict:'workspace,k'}).then(function(){ pend(k,0); }).catch(function(){}); }
+  function flush(){ pendList().forEach(function(k){ if(SYNC_RE.test(k)&&!NO_SYNC[k]) queue(k); }); }
+  function hasData(){ var ks=['karo_orders','karo_savdo','karo_qarzdorlar','karo_yetqarzlar','karo_xarajatlar','karo_prodOrders','karo_arrivals','karo_users']; for(var i=0;i<ks.length;i++){ try{ var a=JSON.parse(_get(ks[i])||'[]'); if(a&&a.length) return true; }catch(e){} } return false; }
+
+  function boot(){
+    try{ if(!sb && window.supabase && window.supabase.createClient) sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); }catch(e){}
+    if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
+    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); return; }
+    sb.auth.getSession().then(function(r){
+      var s=r&&r.data?r.data.session:null;
+      if(s) sync();
+      else if(navigator.onLine) showLogin();
+      else { warn('Internet yo’q — offline'); ready=true; }
+    }).catch(function(){ if(navigator.onLine) showLogin(); else ready=true; });
+  }
+
+  function sync(){
+    sb.from('app_data').select('k,v').eq('workspace',WS).then(function(r){
+      if(r.error) throw r.error;
+      var rows=r.data||[];
+      if(!rows.some(function(x){ return x.k===SEEDED; })){ seedBanner(); return; }
+      var pl=pendList().filter(function(k){ return SYNC_RE.test(k)&&!NO_SYNC[k]; });
+      var ch=Promise.resolve(); pl.forEach(function(k){ ch=ch.then(function(){ return pushNow(k); }); });
+      ch.then(function(){
+        rows.forEach(function(x){ if(String(x.k).indexOf('__meta')===0) return; try{ _set(x.k, x.v==null?'':String(x.v)); }catch(e){} });
+        sessionStorage.setItem(FLAG,'1'); location.reload();
+      });
+    }).catch(function(e){ warn('Bulutga ulanmadi — offline (oxirgi nusxa)'); ready=true; });
+  }
+
+  function uploadAll(){
+    if(!sb) return; var rows=[];
+    for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(SYNC_RE.test(k)&&!NO_SYNC[k]) rows.push({workspace:WS,k:k,v:_get(k),updated_at:new Date().toISOString()}); }
+    rows.push({workspace:WS,k:SEEDED,v:'1',updated_at:new Date().toISOString()});
+    var b=document.getElementById('cloud-seed-btn'); if(b){ b.disabled=true; b.textContent='Yuklanmoqda...'; }
+    sb.from('app_data').upsert(rows,{onConflict:'workspace,k'}).then(function(r){
+      if(r.error){ alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} return; }
+      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit();
+      alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!");
+    }).catch(function(e){ alert('Xato: '+e); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} });
+  }
+
+  function showLogin(){
+    if(document.getElementById('cloud-login')) return;
+    var o=document.createElement('div'); o.id='cloud-login';
+    o.style.cssText='position:fixed;inset:0;z-index:2000000;background:linear-gradient(135deg,#0A1D3F,#16345e);display:flex;align-items:center;justify-content:center;padding:18px;font-family:Segoe UI,sans-serif';
+    o.innerHTML='<div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 18px 60px rgba(0,0,0,.4)"><div style="text-align:center;font-size:1.5rem;font-weight:900;color:#0A1D3F">☁️ NLS BOX</div><div style="text-align:center;color:#7185a3;font-size:.86rem;margin-bottom:18px">Bulutli bazaga kirish</div><label style="font-size:.8rem;font-weight:700;color:#42536b">Email</label><input id="cl-email" type="email" autocomplete="username" style="width:100%;padding:11px;margin:5px 0 12px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:.95rem;outline:none"><label style="font-size:.8rem;font-weight:700;color:#42536b">Parol</label><input id="cl-pass" type="password" autocomplete="current-password" style="width:100%;padding:11px;margin:5px 0 14px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:.95rem;outline:none"><div id="cl-err" style="color:#c0392b;font-size:.82rem;font-weight:700;min-height:18px;margin-bottom:6px"></div><button id="cl-go" style="width:100%;padding:12px;border:none;border-radius:10px;background:#1D6AE5;color:#fff;font-weight:800;font-size:.98rem;cursor:pointer">Kirish</button></div>';
+    document.body.appendChild(o);
+    var go=document.getElementById('cl-go'),em=document.getElementById('cl-email'),pw=document.getElementById('cl-pass');
+    function sub(){ var e=(em.value||'').trim(),p=pw.value||''; if(!e||!p){ document.getElementById('cl-err').textContent='Email va parolni kiriting'; return; } go.disabled=true; go.textContent='Tekshirilmoqda...'; sb.auth.signInWithPassword({email:e,password:p}).then(function(r){ if(r.error){ document.getElementById('cl-err').textContent='Xato: '+r.error.message; go.disabled=false; go.textContent='Kirish'; return; } if(o.parentNode)o.parentNode.removeChild(o); sync(); }).catch(function(er){ document.getElementById('cl-err').textContent='Xato: '+er; go.disabled=false; go.textContent='Kirish'; }); }
+    go.onclick=sub; pw.addEventListener('keydown',function(ev){ if(ev.key==='Enter') sub(); }); try{ em.focus(); }catch(e){}
+  }
+
+  function seedBanner(){
+    if(document.getElementById('cloud-seed')) return; ready=false;
+    var local=hasData(), b=document.createElement('div'); b.id='cloud-seed';
+    b.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:1999000;background:#fff7e6;border-top:2px solid #f0c674;padding:11px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;font-family:Segoe UI,sans-serif';
+    b.innerHTML='<span style="font-size:.88rem;color:#7a5b00;font-weight:700">☁️ Bulut hali to’ldirilmagan.'+(local?' Shu qurilmadagi ma’lumotlarni yuklaysizmi?':' Asosiy (to’liq) ma’lumotli kompyuterda yuklang.')+'</span>'+(local?'<button id="cloud-seed-btn" style="padding:8px 16px;border:none;border-radius:9px;background:#e0a82e;color:#fff;font-weight:800;cursor:pointer">☁️ Bulutga yuklash</button>':'');
+    document.body.appendChild(b);
+    var x=document.getElementById('cloud-seed-btn'); if(x) x.onclick=function(){ if(confirm('Shu qurilmadagi BARCHA ma’lumotlar bulutga yuklansinmi?\n(Faqat asosiy, to’liq ma’lumotli kompyuterda bajaring!)')) uploadAll(); };
+  }
+  function rmSeed(){ var b=document.getElementById('cloud-seed'); if(b&&b.parentNode) b.parentNode.removeChild(b); }
+
+  function chipInit(){
+    if(document.getElementById('cloud-chip')) return;
+    var c=document.createElement('div'); c.id='cloud-chip';
+    c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
+    c.textContent='☁️ Bulut yoqilgan'; c.title='Bulutdan chiqish (bu qurilmada)';
+    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ sessionStorage.removeItem(FLAG); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
+    document.body.appendChild(c);
+  }
+  function chip(s){ var c=document.getElementById('cloud-chip'); if(!c) return; if(s==='ok'){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Saqlandi'; clearTimeout(c._t); c._t=setTimeout(function(){ c.textContent='☁️ Bulut yoqilgan'; },1200); } else if(s==='err'){ c.style.background='#fdecea';c.style.color='#c0392b';c.style.borderColor='#f5c6cb';c.textContent='☁️ Ulanish xato'; } }
+  function warn(m){ chipInit(); var c=document.getElementById('cloud-chip'); if(c){ c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Offline'; c.title=m; } }
+
+  window.addEventListener('online',function(){ if(ready) flush(); });
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
 <link href="./karobka_dastur_files/css2" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18797,7 +18894,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.11';
+  var APP_VERSION = '1.12';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
