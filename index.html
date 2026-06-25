@@ -27,12 +27,22 @@
   function flush(){ pendList().forEach(function(k){ if(SYNC_RE.test(k)&&!NO_SYNC[k]) queue(k); }); }
   function hasData(){ var ks=['karo_orders','karo_savdo','karo_qarzdorlar','karo_yetqarzlar','karo_xarajatlar','karo_prodOrders','karo_arrivals','karo_users']; for(var i=0;i<ks.length;i++){ try{ var a=JSON.parse(_get(ks[i])||'[]'); if(a&&a.length) return true; }catch(e){} } return false; }
 
+  // Supabase foydalanuvchi emailini AUTH moduliga uzatamiz (yagona login uchun)
+  function rememberUser(s){
+    try{
+      var u=s&&s.user;
+      if(u&&u.email){ window.__SUPA_EMAIL=u.email; sessionStorage.setItem('karo_auth_email',u.email); if(u.id) sessionStorage.setItem('karo_auth_uid',u.id); }
+      else { window.__SUPA_EMAIL=''; sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); }
+    }catch(e){}
+    try{ if(window.AUTH&&window.AUTH.onAuth) window.AUTH.onAuth(); }catch(e){}
+  }
   function boot(){
-    try{ if(!sb && window.supabase && window.supabase.createClient) sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); }catch(e){}
+    try{ if(!sb && window.supabase && window.supabase.createClient){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); window.__SUPA=sb; } }catch(e){}
     if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
-    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); return; }
+    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
     sb.auth.getSession().then(function(r){
       var s=r&&r.data?r.data.session:null;
+      rememberUser(s);
       if(s) sync();
       else if(navigator.onLine) showLogin();
       else { warn('Internet yo’q — offline'); ready=true; }
@@ -72,7 +82,7 @@
     o.innerHTML='<div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:380px;width:100%;box-shadow:0 18px 60px rgba(0,0,0,.4)"><div style="text-align:center;font-size:1.5rem;font-weight:900;color:#0A1D3F">☁️ NLS BOX</div><div style="text-align:center;color:#7185a3;font-size:.86rem;margin-bottom:18px">Bulutli bazaga kirish</div><label style="font-size:.8rem;font-weight:700;color:#42536b">Email</label><input id="cl-email" type="email" autocomplete="username" style="width:100%;padding:11px;margin:5px 0 12px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:.95rem;outline:none"><label style="font-size:.8rem;font-weight:700;color:#42536b">Parol</label><input id="cl-pass" type="password" autocomplete="current-password" style="width:100%;padding:11px;margin:5px 0 14px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:.95rem;outline:none"><div id="cl-err" style="color:#c0392b;font-size:.82rem;font-weight:700;min-height:18px;margin-bottom:6px"></div><button id="cl-go" style="width:100%;padding:12px;border:none;border-radius:10px;background:#1D6AE5;color:#fff;font-weight:800;font-size:.98rem;cursor:pointer">Kirish</button></div>';
     document.body.appendChild(o);
     var go=document.getElementById('cl-go'),em=document.getElementById('cl-email'),pw=document.getElementById('cl-pass');
-    function sub(){ var e=(em.value||'').trim(),p=pw.value||''; if(!e||!p){ document.getElementById('cl-err').textContent='Email va parolni kiriting'; return; } go.disabled=true; go.textContent='Tekshirilmoqda...'; sb.auth.signInWithPassword({email:e,password:p}).then(function(r){ if(r.error){ document.getElementById('cl-err').textContent='Xato: '+r.error.message; go.disabled=false; go.textContent='Kirish'; return; } if(o.parentNode)o.parentNode.removeChild(o); sync(); }).catch(function(er){ document.getElementById('cl-err').textContent='Xato: '+er; go.disabled=false; go.textContent='Kirish'; }); }
+    function sub(){ var e=(em.value||'').trim(),p=pw.value||''; if(!e||!p){ document.getElementById('cl-err').textContent='Email va parolni kiriting'; return; } go.disabled=true; go.textContent='Tekshirilmoqda...'; sb.auth.signInWithPassword({email:e,password:p}).then(function(r){ if(r.error){ document.getElementById('cl-err').textContent='Xato: '+r.error.message; go.disabled=false; go.textContent='Kirish'; return; } if(o.parentNode)o.parentNode.removeChild(o); rememberUser(r.data&&r.data.session); sync(); }).catch(function(er){ document.getElementById('cl-err').textContent='Xato: '+er; go.disabled=false; go.textContent='Kirish'; }); }
     go.onclick=sub; pw.addEventListener('keydown',function(ev){ if(ev.key==='Enter') sub(); }); try{ em.focus(); }catch(e){}
   }
 
@@ -91,7 +101,7 @@
     var c=document.createElement('div'); c.id='cloud-chip';
     c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
     c.textContent='☁️ Bulut yoqilgan'; c.title='Bulutdan chiqish (bu qurilmada)';
-    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ sessionStorage.removeItem(FLAG); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
+    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ sessionStorage.removeItem(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
   function chip(s){ var c=document.getElementById('cloud-chip'); if(!c) return; if(s==='ok'){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Saqlandi'; clearTimeout(c._t); c._t=setTimeout(function(){ c.textContent='☁️ Bulut yoqilgan'; },1200); } else if(s==='err'){ c.style.background='#fdecea';c.style.color='#c0392b';c.style.borderColor='#f5c6cb';c.textContent='☁️ Ulanish xato'; } }
@@ -18422,6 +18432,46 @@ updateProdBadge();
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
   function val(id){ var e=document.getElementById(id); return e ? e.value : ''; }
 
+  /* ---------- Supabase Auth (yagona login) ---------- */
+  var ADMIN_EMAIL = 'murod000021@gmail.com';
+  function getEmail(){
+    var e=''; try{ e=sessionStorage.getItem('karo_auth_email')||''; }catch(_){}
+    if(!e){ try{ if(window.__SUPA_EMAIL) e=window.__SUPA_EMAIL; }catch(_){} }
+    return (e||'').trim();
+  }
+  // Supabase email asosida joriy foydalanuvchini topadi/yaratadi va sessiyani o'rnatadi.
+  function resolveSession(){
+    var email = getEmail();
+    if(!email){ return false; }
+    var emL = email.toLowerCase();
+    var users = loadUsers();
+    var u = users.filter(function(x){ return (x.email||'').toLowerCase()===emL; })[0];
+    if(!u){
+      if(emL === ADMIN_EMAIL){
+        u = users.filter(function(x){ return x.role==='admin' && !(x.email); })[0];   // eski (PIN) adminni biriktirib olamiz
+        if(u){ u.email=email; u.login=email; if(!u.name) u.name='Admin'; }
+        else { u = { id:'u'+Date.now(), email:email, name:'Admin', login:email, role:'admin', pages:[], prodStages:[], hideOmborSums:false }; users.push(u); }
+        saveUsers(users);
+      } else {
+        u = { id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(email.split('@')[0]||email), login:email, role:'employee', pages:[], prodStages:[], hideOmborSums:false };
+        users.push(u); saveUsers(users);
+      }
+    } else if(emL===ADMIN_EMAIL && u.role!=='admin'){
+      u.role='admin'; saveUsers(users);
+    }
+    setSessionId(u.id);
+    return true;
+  }
+  function applyAuthState(){
+    if(resolveSession()){
+      closeOverlay();
+      applyPermissions();
+      renderUserList();
+      return true;
+    }
+    return false;
+  }
+
   /* ---------- nav / sahifalar ---------- */
   function navButtons(){ return Array.prototype.slice.call(document.querySelectorAll('nav button')); }
   function pageIdOf(btn){
@@ -18473,13 +18523,34 @@ updateProdBadge();
     // joriy sahifa ruxsatli bo'lmasa — birinchi ruxsatli sahifaga o'tamiz
     var active = document.querySelector('.page.active');
     var activeId = active ? active.id.replace('page-','') : null;
-    if(!activeId || !canAccess(activeId)){
-      var f = firstAllowedPage();
-      if(f){ var b = navButtonFor(f); if(window.showPage) window.showPage(f, b); }
-      else if(u && u.role !== 'admin'){ miniToast("Sizga hali bo'lim biriktirilmagan — admin bilan bog'laning"); }
+    var f0 = firstAllowedPage();
+    if(u && u.role !== 'admin' && !f0){
+      showNoAccess(u);   // hech qanday bo'lim ruxsati yo'q — toza "ruxsat yo'q" ekrani
+    } else {
+      removeNoAccess();
+      if(!activeId || !canAccess(activeId)){
+        if(f0){ var b = navButtonFor(f0); if(window.showPage) window.showPage(f0, b); }
+      }
     }
     renderUserBox();
   }
+  function showNoAccess(u){
+    var ov = document.getElementById('auth-noaccess');
+    if(!ov){
+      ov = document.createElement('div'); ov.id='auth-noaccess';
+      ov.style.cssText='position:fixed;inset:0;z-index:999998;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0b2350,#0e3274);font-family:Segoe UI,sans-serif';
+      document.body.appendChild(ov);
+    }
+    ov.innerHTML = '<div style="background:#fff;border-radius:18px;padding:30px 26px;max-width:420px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">'+
+      '<div style="font-size:2.4rem;margin-bottom:8px">🔒</div>'+
+      '<div style="font-size:1.15rem;font-weight:800;color:#0A1D3F;margin-bottom:8px">Ruxsat yo\'q</div>'+
+      '<div style="color:#444;font-size:0.92rem;line-height:1.55;margin-bottom:14px">Sizga hali bo\'lim biriktirilmagan.<br>Admin Sozlamalar &rarr; Foydalanuvchilar bo\'limidan ruxsat bersin.</div>'+
+      '<div style="font-size:0.8rem;color:#7A8BA6;margin-bottom:16px">'+esc((u&&u.email)||'')+'</div>'+
+      '<button id="auth-noaccess-out" style="padding:10px 22px;border:none;border-radius:9px;background:#2d6a9f;color:#fff;font-weight:700;cursor:pointer">Chiqish</button></div>';
+    ov.style.display='flex';
+    var b=document.getElementById('auth-noaccess-out'); if(b) b.onclick=logout;
+  }
+  function removeNoAccess(){ var ov=document.getElementById('auth-noaccess'); if(ov) ov.style.display='none'; }
 
   /* ---------- Ombor umumiy qiymatlarini yashirish (faqat belgilangan xodim uchun) ---------- */
   var _omborObs = null, _omborMasking = false;
@@ -18722,7 +18793,15 @@ updateProdBadge();
     box.innerHTML = '<span class="auth-chip">&#128100; '+esc(u.name)+' &middot; '+rl+'</span><button class="auth-logout" id="auth-logout-btn">Chiqish</button>';
     var b = document.getElementById('auth-logout-btn'); if(b) b.onclick = logout;
   }
-  function logout(){ setSessionId(''); location.reload(); }
+  function logout(){
+    try{ sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); sessionStorage.removeItem('karoCloudSession'); }catch(e){}
+    try{ window.__SUPA_EMAIL=''; }catch(e){}
+    setSessionId('');
+    try{
+      if(window.__SUPA && window.__SUPA.auth && window.__SUPA.auth.signOut){ window.__SUPA.auth.signOut().then(function(){ location.reload(); }).catch(function(){ location.reload(); }); return; }
+    }catch(e){}
+    location.reload();
+  }
 
   /* ---------- Sozlamalardagi foydalanuvchilar kartasi ---------- */
   function injectSettingsCard(){
@@ -18755,7 +18834,7 @@ updateProdBadge();
         '<div class="auth-row-main">'+
           '<span class="auth-av">'+esc(letter)+'</span>'+
           '<div><div class="auth-row-name">'+esc(u.name)+' <span class="auth-badge '+(u.role==='admin'?'admin':'employee')+'">'+roleTxt+'</span></div>'+
-          '<div class="auth-row-sub">Login: '+esc(u.login)+' &middot; '+access+me+'</div></div>'+
+          '<div class="auth-row-sub">📧 '+esc(u.email||u.login||'—')+' &middot; '+access+me+'</div></div>'+
         '</div>'+
         '<div class="auth-row-actions">'+
           '<button data-authui="edit" data-id="'+u.id+'" title="Tahrirlash">&#9999;&#65039;</button>'+
@@ -18782,10 +18861,9 @@ updateProdBadge();
       '<div class="auth-modal-box">'+
         '<h3>'+(u?'Xodimni tahrirlash':'Yangi xodim')+'</h3>'+
         '<div class="auth-form">'+
-          '<label>Ism<input id="uf-name" autocomplete="off" value="'+(u?esc(u.name):'')+'"></label>'+
-          '<label>Login<input id="uf-login" autocomplete="off" value="'+(u?esc(u.login):'')+'"></label>'+
-          '<label>PIN kod'+(u?' (bo\'sh = o\'zgarmaydi)':' (4-8 raqam)')+'<input id="uf-pin" inputmode="numeric" maxlength="8" autocomplete="off"></label>'+
-          '<label>PIN takror<input id="uf-pin2" inputmode="numeric" maxlength="8" autocomplete="off"></label>'+
+          '<label>Email (Supabase Authentication\'dagi bilan bir xil)<input id="uf-email" type="email" autocomplete="off" placeholder="xodim@email.com" value="'+(u?esc(u.email||''):'')+'"></label>'+
+          '<label>Ism (ixtiyoriy)<input id="uf-name" autocomplete="off" value="'+(u?esc(u.name||''):'')+'"></label>'+
+          '<div class="auth-hint" style="margin:-2px 0 2px">Avval Supabase &rarr; Authentication &rarr; Users\'da shu email bilan account oching, keyin shu yerda bo\'limlarni belgilang. Bosh admin: <b>'+esc(ADMIN_EMAIL)+'</b>.</div>'+
           '<div><div class="auth-pages-head" style="margin-top:4px"><b>Rol</b></div>'+
             '<div class="auth-roles">'+
               '<label><input type="radio" name="uf-role" value="employee" '+(isAdmin?'':'checked')+'> Xodim</label>'+
@@ -18827,10 +18905,8 @@ updateProdBadge();
   function saveUserForm(){
     var btn = document.querySelector('#auth-modal [data-authui="save"]');
     var id = btn ? btn.getAttribute('data-id') : '';
+    var email = val('uf-email').trim();
     var name = val('uf-name').trim();
-    var login = val('uf-login').trim();
-    var pin = val('uf-pin').replace(/\D/g,'');
-    var pin2 = val('uf-pin2').replace(/\D/g,'');
     var roleEl = document.querySelector('#auth-modal input[name="uf-role"]:checked');
     var role = roleEl ? roleEl.value : 'employee';
     var pages = Array.prototype.slice.call(document.querySelectorAll('#uf-pages input:checked')).map(function(c){ return c.value; });
@@ -18839,24 +18915,21 @@ updateProdBadge();
     // Bosqich belgilangan bo'lsa — «🏭 Ishlab chiqarish» bo'limini avtomat ochamiz (aks holda cheklov ta'sir qilmaydi)
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
-    if(!name) return fail('Ismni kiriting');
-    if(!login) return fail('Loginni kiriting');
+    if(!email || email.indexOf('@')<1) return fail("To'g'ri email kiriting");
+    if(email.toLowerCase()===ADMIN_EMAIL) role='admin';   // bosh admin doim admin
     var us = loadUsers();
-    var dup = us.filter(function(x){ return String(x.login).toLowerCase()===login.toLowerCase() && x.id!==id; })[0];
-    if(dup) return fail('Bu login band');
+    var dup = us.filter(function(x){ return String(x.email||'').toLowerCase()===email.toLowerCase() && x.id!==id; })[0];
+    if(dup) return fail('Bu email allaqachon ro\'yxatda');
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
-      if(pin.length<4 || pin.length>8) return fail("PIN 4-8 raqam bo'lsin");
-      if(pin!==pin2) return fail('PIN mos kelmadi');
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), name:name, login:login, pin:hashPin(pin), role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor });
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
-      if(pin){ if(pin.length<4 || pin.length>8) return fail("PIN 4-8 raqam bo'lsin"); if(pin!==pin2) return fail('PIN mos kelmadi'); existing.pin = hashPin(pin); }
-      existing.name = name; existing.login = login; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor;
+      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
@@ -18864,6 +18937,7 @@ updateProdBadge();
   }
   function deleteUser(id){
     var us = loadUsers(); var u = us.filter(function(x){ return x.id===id; })[0]; if(!u) return;
+    if((u.email||'').toLowerCase()===ADMIN_EMAIL){ miniToast('Bosh adminni o\'chirib bo\'lmaydi'); return; }
     if(id===getSessionId()){ miniToast("O'zingizning hisobingizni o'chira olmaysiz"); return; }
     if(u.role==='admin'){ var admins = us.filter(function(x){ return x.role==='admin'; }); if(admins.length<=1){ miniToast('Kamida bitta admin qolishi kerak'); return; } }
     if(!confirm('"'+u.name+'" o\'chirilsinmi?')) return;
@@ -18885,23 +18959,23 @@ updateProdBadge();
     else if(a==='sel-none') toggleAllPages(false);
   });
 
-  /* ---------- ishga tushirish ---------- */
-  ensureOverlay(); // darrov ko'rsatamiz — dastur ortda ko'rinib qolmasin
+  /* ---------- ishga tushirish (Supabase Auth = yagona login) ---------- */
   function boot(){
     patchShowPage(); patchShowPTab();
     ALL_PAGES = computePages();   // nav to'liq holatda, hamma sahifani yozib olamiz
     injectSettingsCard();
     setupOmborObserver();
-    var us = loadUsers();
-    if(!us.length){ openSetup(); return; }
-    var u = currentUser();
-    if(u){ closeOverlay(); applyPermissions(); renderUserList(); }
-    else { openLogin(); }
+    if(applyAuthState()) return;  // Supabase sessiyasi bor — darrov qo'llaymiz
+    // Supabase login hali bo'lmagan — bulutli login oynasi ko'rsatadi; email kelishini kutamiz
+    var tries=0;
+    var iv=setInterval(function(){
+      if(applyAuthState() || ++tries>40){ clearInterval(iv); }
+    }, 300);
   }
   if(document.readyState==='complete'){ setTimeout(boot, 20); }
   else { window.addEventListener('load', function(){ setTimeout(boot, 20); }); }
 
-  window.AUTH = { logout: logout, apply: applyPermissions, users: loadUsers };
+  window.AUTH = { logout: logout, apply: applyPermissions, users: loadUsers, onAuth: function(){ try{ applyAuthState(); }catch(e){} } };
 })();
 </script>
 <!-- ===== /NLS LOGIN MODULI ===== -->
@@ -18974,7 +19048,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.16';
+  var APP_VERSION = '1.17';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
