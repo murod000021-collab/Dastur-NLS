@@ -71,7 +71,7 @@
         rows.forEach(function(x){ if(String(x.k).indexOf('__meta')===0) return; cloudKeys[x.k]=1; try{ _set(x.k, x.v==null?'':String(x.v)); }catch(e){} });
         // Bulutda yo'q karo_* kalitlarni mahalliydan ham o'chiramiz (bulut = yagona manba)
         for(var ri=localStorage.length-1;ri>=0;ri--){ var rk=localStorage.key(ri); if(rk&&SYNC_RE.test(rk)&&!NO_SYNC[rk]&&!cloudKeys[rk]&&pl.indexOf(rk)<0){ try{ _remove(rk); }catch(e){} } }
-        sessionStorage.setItem(FLAG,'1'); location.reload();
+        sessionStorage.setItem(FLAG,'1'); karoReload();
       });
     }).catch(function(e){ warn('Bulutga ulanmadi — offline (oxirgi nusxa)'); ready=true; });
   }
@@ -146,7 +146,7 @@
           // o'chirilgan ma'lumotni qo'llash uchun reload, har sessiyada FAQAT BIR MARTA (F5 halqasini oldini oladi)
           if(sessionStorage.getItem('karo_boot_reload')==='1'){ if(changed) scheduleRerender(); return; }
           try{ sessionStorage.setItem('karo_boot_reload','1'); }catch(e){}
-          location.reload(); return;
+          karoReload(); return;
         }
         if(changed) scheduleRerender();
       }).catch(function(){});
@@ -205,7 +205,7 @@
         if(!_lastUpdatedAt){ _lastUpdatedAt=ts; return; }
         if(ts>_lastUpdatedAt){ _lastUpdatedAt=ts; showSyncNotice(); }
       }).catch(function(){});
-    },15000);
+    },3000);
   }
   function showSyncNotice(){
     var el=document.getElementById('sync-notice');
@@ -213,7 +213,7 @@
     el=document.createElement('div'); el.id='sync-notice';
     el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#1457c4,#2e86f0);color:#fff;padding:11px 18px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:Segoe UI,sans-serif;font-size:0.9rem;font-weight:700;box-shadow:0 3px 14px rgba(0,0,0,0.22);animation:syncSlideDown .35s ease';
     el.innerHTML='<span style="font-size:1.1rem">🔄</span><span>Yangi ma\'lumot bor — sahifani yangilang</span>'
-      +'<button onclick="location.reload()" style="padding:7px 18px;border:none;border-radius:8px;background:#fff;color:#1457c4;font-weight:800;cursor:pointer;font-size:0.88rem;box-shadow:0 1px 4px rgba(0,0,0,0.15)">Yangilash</button>'
+      +'<button onclick="karoReload()" style="padding:7px 18px;border:none;border-radius:8px;background:#fff;color:#1457c4;font-weight:800;cursor:pointer;font-size:0.88rem;box-shadow:0 1px 4px rgba(0,0,0,0.15)">Yangilash</button>'
       +'<button onclick="document.getElementById(\'sync-notice\').style.display=\'none\'" style="padding:5px 11px;border:none;border-radius:8px;background:rgba(255,255,255,0.18);color:#fff;cursor:pointer;font-size:1rem;line-height:1">✕</button>';
     document.body.appendChild(el);
     if(!document.getElementById('sync-notice-style')){
@@ -4865,6 +4865,11 @@ function save() {
 }
 
 // ===== NAV =====
+function karoReload(){
+  try{ var _p=document.querySelector('.page.active'); if(_p&&_p.id) sessionStorage.setItem('karo_reload_page',_p.id.replace('page-','')); }catch(e){}
+  location.reload();
+}
+
 function showPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
