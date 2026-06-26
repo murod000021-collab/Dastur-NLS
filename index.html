@@ -17,6 +17,7 @@
   var sb=null, ready=false, timers={};
   // ☁️ REALTIME holati
   var rtChan=null, everSubbed=false, _applying=false, rerenderTimer=null, rtOk=true;
+  var _lastUpdatedAt='', _pollT=null;
 
   // Har bir karo_* o'zgarishini bulutga yo'naltiramiz (mahalliy saqlash baribir ishlayveradi)
   // _applying=true bo'lsa (masofiy o'zgarishni qo'llab qayta-render qilayotganda) qayta push qilmaymiz — echo halqasini oldini oladi
@@ -42,7 +43,7 @@
   function boot(){
     try{ if(!sb && window.supabase && window.supabase.createClient){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); window.__SUPA=sb; } }catch(e){}
     if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
-    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); startRealtime(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
+    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); startRealtime(); startPollFallback(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
     sb.auth.getSession().then(function(r){
       var s=r&&r.data?r.data.session:null;
       rememberUser(s);
@@ -88,7 +89,7 @@
         else { alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} }
         return;
       }
-      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime();
+      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime(); startPollFallback();
       if(auto){ chip('ok'); } else { alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!"); }
     }).catch(function(e){
       if(auto){ ready=true; warn('Bulutga yozilmadi — internet yoki Supabase SQL ni tekshiring'); }
@@ -187,6 +188,24 @@
     var c=document.getElementById('cloud-chip'); if(!c) return;
     c.style.background='#e7f0ff'; c.style.color='#1457c4'; c.style.borderColor='#aecbf5'; c.textContent='☁️ Yangilandi';
     clearTimeout(c._t); c._t=setTimeout(function(){ chipRest(); },1600);
+  }
+  function startPollFallback(){
+    if(_pollT||!sb) return;
+    // So'nggi updated_at ni birinchi marta yozib olamiz (boshlang'ich holat)
+    sb.from('app_data').select('updated_at').eq('workspace',WS).order('updated_at',{ascending:false}).limit(1).then(function(r){
+      if(!r||r.error||!r.data||!r.data.length) return;
+      _lastUpdatedAt=r.data[0].updated_at||'';
+    }).catch(function(){});
+    // Har 15 soniyada tekshiramiz
+    _pollT=setInterval(function(){
+      if(!sb||!ready) return;
+      sb.from('app_data').select('updated_at').eq('workspace',WS).order('updated_at',{ascending:false}).limit(1).then(function(r){
+        if(!r||r.error||!r.data||!r.data.length) return;
+        var ts=r.data[0].updated_at||'';
+        if(!_lastUpdatedAt){ _lastUpdatedAt=ts; return; }
+        if(ts>_lastUpdatedAt){ _lastUpdatedAt=ts; showSyncNotice(); }
+      }).catch(function(){});
+    },15000);
   }
   function showSyncNotice(){
     var el=document.getElementById('sync-notice');
