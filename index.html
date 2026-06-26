@@ -18658,7 +18658,10 @@ updateProdBadge();
     if(!u) return false;
     if(u.role === 'admin') return true;
     if(id === 'sozlamalar') return false;
-    if(u.role === 'ish_boshqaruvchi') return true;
+    if(u.role === 'ish_boshqaruvchi'){
+      if(id === 'kassa' || id === 'hisobot') return false;
+      return true;
+    }
     return (u.pages || []).indexOf(id) !== -1;
   }
   function firstAllowedPage(){
@@ -19217,7 +19220,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.26';
+  var APP_VERSION = '1.27';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
