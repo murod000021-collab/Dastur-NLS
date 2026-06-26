@@ -18075,7 +18075,9 @@ updateProdBadge();
     INV._weighId=id;
     var info=$('inv-weight-info');
     if(info) info.innerHTML='<b>'+esc(sh.company)+'</b> · '+esc(sh.date)+(sh.vehicle?' · 🚚 '+esc(sh.vehicle):'')+(sh.driver?' · 👤 '+esc(sh.driver):'');
-    $('inv-w-weight').value = sh.weight||''; $('inv-w-price').value = sh.pricePerKg||'';
+    $('inv-w-weight').value = sh.weight||'';
+    var defPrice = sh.pricePerKg || (+MAKSTOCK.pricePerKg||0) || lastMakPrice() || 0;
+    $('inv-w-price').value = defPrice || '';
     $('inv-w-paystatus').value='unpaid'; INV.toggleWeightPay(); INV.calcWeight();
     var m=$('inv-weight-modal'); if(m) m.classList.add('open');
   };
@@ -18769,8 +18771,9 @@ updateProdBadge();
   }
   function applyProdStageAccess(){
     var u = currentUser(); if(!u) return;
-    var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length;
+    var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length || !!(u.canApproveOrders);
     // Bosqichga biriktirilgan xodim — «Tasdiq kutilayotgan zakazlar» (zakazni tasdiqlash) kartasini ko'rmasin
+    // (canApproveOrders=true bo'lsa — bosqich cheklangan bo'lsa ham H9 ko'rinadi)
     var aoCard = document.getElementById('active-orders-card');
     if(aoCard) aoCard.style.display = unrestricted ? '' : 'none';
     var curVisible = null;
@@ -19027,6 +19030,10 @@ updateProdBadge();
             '<div class="auth-pages-head" style="margin-top:12px"><b>🏭 Ishlab chiqarish bosqichlari</b> <span style="font-size:0.74rem;color:#888;font-weight:600">(bo\'sh = barchasi)</span></div>'+
             '<div class="auth-pages-grid" id="uf-stages">'+stagesHtml+'</div>'+
             '<div class="auth-hint">Bosqich belgilasangiz «🏭 Ishlab chiqarish» avtomat ochiladi va xodim <b>faqat o\'sha bosqich(lar)ni</b> ko\'radi (boshqa bosqichlar va «tasdiq kutilayotgan zakazlar» ko\'rinmaydi). Har xil xodimga har xil bosqich bering. Hech bosqich belgilanmasa — barcha 5 bosqich ochiq.</div>'+
+            '<label class="auth-pg" id="uf-approveorders-row" style="margin-top:8px;border-color:#93D8B2;background:#f0fff6;font-weight:600">'+
+              '<input type="checkbox" id="uf-approveorders" '+(u&&u.canApproveOrders?'checked':'')+'>'+
+              '&#9989; Bosqich cheklansa ham «⏳ Tasdiq kutilayotgan zakazlar» (H9) ko\'rinsin'+
+            '</label>'+
           '</div>'+
           '<div class="auth-err" id="uf-err"></div>'+
         '</div>'+
@@ -19058,6 +19065,7 @@ updateProdBadge();
     var pages = Array.prototype.slice.call(document.querySelectorAll('#uf-pages input:checked')).map(function(c){ return c.value; });
     var prodStages = Array.prototype.slice.call(document.querySelectorAll('#uf-stages input:checked')).map(function(c){ return c.value; });
     var hideOmbor = !!(document.getElementById('uf-hideombor') && document.getElementById('uf-hideombor').checked);
+    var canApproveOrders = !!(document.getElementById('uf-approveorders') && document.getElementById('uf-approveorders').checked);
     // Bosqich belgilangan bo'lsa — «🏭 Ishlab chiqarish» bo'limini avtomat ochamiz (aks holda cheklov ta'sir qilmaydi)
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
@@ -19069,13 +19077,13 @@ updateProdBadge();
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor });
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor, canApproveOrders: role==='admin'?false:canApproveOrders });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
-      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor;
+      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor; existing.canApproveOrders = role==='admin'?false:canApproveOrders;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
