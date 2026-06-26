@@ -12997,30 +12997,10 @@ function renderSavdo() {
     if (x.format) chips += '<span style="background:#eef3fa;color:#1a3c5e;border-radius:8px;padding:4px 13px;font-size:0.92rem;font-weight:700">\ud83d\udccf Razmeri: ' + x.format + '</span>';
     if (x.noj)    chips += '<span style="background:#fdeee0;color:#a04000;border:1px solid #f5c98a;border-radius:6px;padding:2px 9px;font-size:0.74rem;font-weight:700">\u2702\ufe0f Noj' + (x.nojPrice ? ' ' + spaceFmt(x.nojPrice) : '') + '</span>';
 
-    return '<div style="border:1.5px solid ' + cardBd + ';border-radius:13px;padding:15px 17px;margin-bottom:11px;background:' + cardBg + '">'
-      // Yuqori qator
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:9px">'
-        + '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">'
-          + '<span style="font-size:1.12rem;font-weight:800;color:#1a3c5e">\ud83c\udfe2 ' + (x.client||'\u2014') + '</span>'
-          + (x.product ? '<span style="font-size:1rem;font-weight:800;color:#134A9E;background:#eaf1fc;border:1.5px solid #cdddf6;border-radius:8px;padding:3px 12px">\ud83d\udce6 ' + x.product + '</span>' : '')
-          + '<span style="font-size:0.78rem;color:#888;background:#f0f4f8;border-radius:5px;padding:1px 8px">' + (x.order||'') + '</span>'
-        + '</div>'
-        + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-          + '<span style="font-size:0.75rem;color:#aaa">' + (x.date||'') + '</span>'
-          + stateChip
-          + payTypeBadge
-        + '</div>'
-      + '</div>'
-
-      + (chips ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + chips + '</div>' : '')
-
-      + tayyorLine
-
-      // Summalar qatori
-      + '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:11px">'
+    var summalarBlock = '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:11px">'
         + '<div style="min-width:120px">'
           + '<div style="font-size:0.68rem;color:#aaa;text-transform:uppercase;letter-spacing:0.4px">Hisob</div>'
-          + '<div style="font-size:0.9rem;color:#333">' + spaceFmt(x.qty||0) + ' \u00d7 ' + spaceFmt(x.unitPrice||0) + " so'm</div>"
+          + '<div style="font-size:0.9rem;color:#333">' + spaceFmt(x.qty||0) + ' × ' + spaceFmt(x.unitPrice||0) + " so'm</div>"
         + '</div>'
         + '<div style="width:1px;height:34px;background:#e8e8e8"></div>'
         + '<div style="text-align:center;min-width:100px">'
@@ -13049,11 +13029,42 @@ function renderSavdo() {
           + '</div>'
           + '<div style="font-size:0.7rem;color:#aaa;text-align:right">' + paidPct + "% to'landi (yetkazilgandan)</div>"
         + '</div>'
-      + '</div>'
+      + '</div>';
 
-      + '<div style="display:flex;gap:7px;flex-wrap:wrap">' + actionBtns + '</div>'
+    return '<div style="border:1.5px solid ' + cardBd + ';border-radius:10px;margin-bottom:5px;background:' + cardBg + ';overflow:hidden">'
+      + '<div onclick="toggleSavdoCard(' + x.id + ')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;padding:9px 13px;user-select:none">'
+        + '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;flex:1">'
+          + '<span style="font-size:0.7rem;color:#bbb;flex-shrink:0">' + (i+1) + '.</span>'
+          + '<span style="font-size:0.9rem;font-weight:800;color:#1a3c5e">🏢 ' + (x.client||'—') + '</span>'
+          + (x.product ? '<span style="font-size:0.78rem;font-weight:700;color:#134A9E;background:#eaf1fc;border:1px solid #cdddf6;border-radius:6px;padding:2px 8px">📦 ' + x.product + '</span>' : '')
+          + (x.order ? '<span style="font-size:0.7rem;color:#888;background:#f0f4f8;border-radius:5px;padding:1px 7px">' + x.order + '</span>' : '')
+          + (x.format ? '<span style="font-size:0.7rem;background:#eef3fa;color:#1a3c5e;border-radius:5px;padding:1px 7px">📏 ' + x.format + '</span>' : '')
+          + (x.noj ? '<span style="font-size:0.68rem;background:#fdeee0;color:#a04000;border:1px solid #f5c98a;border-radius:5px;padding:1px 6px">✂️ Noj</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap">'
+          + '<span style="font-size:0.7rem;color:#aaa">' + (x.date||'') + '</span>'
+          + stateChip
+          + payTypeBadge
+          + '<span id="sv-arr-' + x.id + '" style="font-size:0.78rem;color:#b0bac8;margin-left:2px">▼</span>'
+        + '</div>'
+      + '</div>'
+      + '<div id="svd-body-' + x.id + '" style="display:none;padding:12px 14px 14px;border-top:1px solid ' + cardBd + '">'
+        + (chips ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + chips + '</div>' : '')
+        + tayyorLine
+        + summalarBlock
+        + '<div style="display:flex;gap:7px;flex-wrap:wrap">' + actionBtns + '</div>'
+      + '</div>'
     + '</div>';
   }).join('');
+}
+
+function toggleSavdoCard(id) {
+  var body = document.getElementById('svd-body-' + id);
+  var arr  = document.getElementById('sv-arr-' + id);
+  if (!body) return;
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arr) arr.textContent = isOpen ? '▼' : '▲';
 }
 
 // ===== KASSA =====
@@ -19477,7 +19488,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.31';
+  var APP_VERSION = '1.32';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
