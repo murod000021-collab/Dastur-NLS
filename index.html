@@ -18685,6 +18685,14 @@ updateProdBadge();
       }
     }
     renderUserBox();
+    // Agar production sahifasi aktiv bo'lsa, bosqich ruxsatlarini qayta qo'llaymiz
+    var prodPage = document.getElementById('page-production');
+    if(prodPage && prodPage.classList.contains('active')) applyProdStageAccess();
+    // Bildirshnoma va qidiruv barcha autentifikatsiyalangan xodimlarda ko'rinadi
+    var pf=document.getElementById('prem-fab'); if(pf) pf.style.display='';
+    var nb2=document.getElementById('prem-notif-btn'); if(nb2) nb2.style.display='';
+    var qb2=document.getElementById('prem-quick-btn'); if(qb2) qb2.style.display='';
+    var ck=document.getElementById('prem-cmdk-btn'); if(ck) ck.style.display='';
   }
   function showNoAccess(u){
     var ov = document.getElementById('auth-noaccess');
@@ -18776,9 +18784,9 @@ updateProdBadge();
   function applyProdStageAccess(){
     var u = currentUser(); if(!u) return;
     var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length;
-    // Barcha foydalanuvchilar «Tasdiq kutilayotgan zakazlar» kartasini ko'radi
+    // «Tasdiq kutilayotgan zakazlar» faqat cheklovsiz xodimlarga ko'rinadi
     var aoCard = document.getElementById('active-orders-card');
-    if(aoCard) aoCard.style.display = '';
+    if(aoCard) aoCard.style.display = unrestricted ? '' : 'none';
     var curVisible = null;
     PROD_STAGES.forEach(function(st){
       var allowed = unrestricted || (u.prodStages.indexOf(st) !== -1);
@@ -19200,7 +19208,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.24';
+  var APP_VERSION = '1.25';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
