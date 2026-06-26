@@ -18529,6 +18529,7 @@ updateProdBadge();
   .auth-row-sub{font-size:.76rem;color:#8294AB;margin-top:2px}
   .auth-badge{font-size:.68rem;font-weight:800;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
   .auth-badge.admin{background:#FDEBD0;color:#B9770E}
+  .auth-badge.manager{background:#E8F8E8;color:#1A8A2E}
   .auth-badge.employee{background:#E4F1FF;color:#1D6AE5}
   .auth-row-actions{display:flex;gap:6px}
   .auth-row-actions button{border:1.5px solid #DCE6F6;background:#fff;border-radius:10px;padding:7px 11px;cursor:pointer;font-size:.95rem;transition:.12s}
@@ -18657,11 +18658,12 @@ updateProdBadge();
     if(!u) return false;
     if(u.role === 'admin') return true;
     if(id === 'sozlamalar') return false;
+    if(u.role === 'ish_boshqaruvchi') return true;
     return (u.pages || []).indexOf(id) !== -1;
   }
   function firstAllowedPage(){
     var u = currentUser(); if(!u) return null;
-    if(u.role === 'admin') return 'dashboard';
+    if(u.role === 'admin' || u.role === 'ish_boshqaruvchi') return 'dashboard';
     for(var i=0;i<ALL_PAGES.length;i++){ if(canAccess(ALL_PAGES[i].id)) return ALL_PAGES[i].id; }
     return null;
   }
@@ -18676,7 +18678,7 @@ updateProdBadge();
     var active = document.querySelector('.page.active');
     var activeId = active ? active.id.replace('page-','') : null;
     var f0 = firstAllowedPage();
-    if(u && u.role !== 'admin' && !f0){
+    if(u && u.role !== 'admin' && u.role !== 'ish_boshqaruvchi' && !f0){
       showNoAccess(u);   // hech qanday bo'lim ruxsati yo'q — toza "ruxsat yo'q" ekrani
     } else {
       removeNoAccess();
@@ -18688,11 +18690,13 @@ updateProdBadge();
     // Agar production sahifasi aktiv bo'lsa, bosqich ruxsatlarini qayta qo'llaymiz
     var prodPage = document.getElementById('page-production');
     if(prodPage && prodPage.classList.contains('active')) applyProdStageAccess();
-    // Bildirshnoma va qidiruv barcha autentifikatsiyalangan xodimlarda ko'rinadi
+    // Bildirshnoma va qidiruv faqat bosqich cheklovsiz xodimlarga ko'rinadi
+    var u2=currentUser();
+    var stageOnly=u2 && u2.role!=='admin' && u2.prodStages && u2.prodStages.length>0;
     var pf=document.getElementById('prem-fab'); if(pf) pf.style.display='';
-    var nb2=document.getElementById('prem-notif-btn'); if(nb2) nb2.style.display='';
+    var nb2=document.getElementById('prem-notif-btn'); if(nb2) nb2.style.display=stageOnly?'none':'';
     var qb2=document.getElementById('prem-quick-btn'); if(qb2) qb2.style.display='';
-    var ck=document.getElementById('prem-cmdk-btn'); if(ck) ck.style.display='';
+    var ck=document.getElementById('prem-cmdk-btn'); if(ck) ck.style.display=stageOnly?'none':'';
   }
   function showNoAccess(u){
     var ov = document.getElementById('auth-noaccess');
@@ -18714,7 +18718,7 @@ updateProdBadge();
 
   /* ---------- Ombor umumiy qiymatlarini yashirish (faqat belgilangan xodim uchun) ---------- */
   var _omborObs = null, _omborMasking = false;
-  function omborMaskOn(){ var u = currentUser(); return !!(u && u.role !== 'admin' && u.hideOmborSums); }
+  function omborMaskOn(){ var u = currentUser(); return !!(u && u.role !== 'admin' && u.role !== 'ish_boshqaruvchi' && u.hideOmborSums); }
   function looksLikeNumber(t){ t = (t==null?'':String(t)).trim(); if(!t || !/\d/.test(t)) return false; return t.replace(/[\d\s\u00a0.,]/g,'') === ''; }
   function maskValueColumn(host, kw){
     if(!host) return;
@@ -18771,7 +18775,7 @@ updateProdBadge();
   var PROD_STAGES = ['gofra','kasherovka','tigel','fleksa','quloq'];
   function canAccessStage(stage){
     var u = currentUser(); if(!u) return false;
-    if(u.role === 'admin') return true;
+    if(u.role === 'admin' || u.role === 'ish_boshqaruvchi') return true;
     if((u.pages||[]).indexOf('production') === -1) return false;
     var ps = u.prodStages;
     if(!ps || !ps.length) return true;   // cheklov yo'q = barcha bosqichlar
@@ -18783,7 +18787,7 @@ updateProdBadge();
   }
   function applyProdStageAccess(){
     var u = currentUser(); if(!u) return;
-    var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length;
+    var unrestricted = (u.role==='admin') || (u.role==='ish_boshqaruvchi') || !u.prodStages || !u.prodStages.length;
     // «Tasdiq kutilayotgan zakazlar» faqat cheklovsiz xodimlarga ko'rinadi
     var aoCard = document.getElementById('active-orders-card');
     if(aoCard) aoCard.style.display = unrestricted ? '' : 'none';
@@ -18861,7 +18865,7 @@ updateProdBadge();
     var us = loadUsers();
     var html = '<div class="auth-users">' + us.map(function(u){
       var letter = (u.name||'?').trim().charAt(0).toUpperCase();
-      var rl = u.role==='admin' ? 'Admin' : 'Xodim';
+      var rl = u.role==='admin' ? 'Admin' : (u.role==='ish_boshqaruvchi' ? 'Ish boshqaruvchi' : 'Xodim');
       return '<button class="auth-user" data-auth="pick" data-id="'+u.id+'"><span class="av">'+esc(letter)+'</span><span class="meta"><span class="nm">'+esc(u.name)+'</span><span class="rl">'+rl+'</span></span></button>';
     }).join('') + '</div>';
     setBody(html);
@@ -18949,7 +18953,7 @@ updateProdBadge();
     var box = document.getElementById('auth-userbox');
     if(!u){ if(box && box.parentNode) box.parentNode.removeChild(box); return; }
     if(!box){ box = document.createElement('div'); box.id='auth-userbox'; host.appendChild(box); }
-    var rl = u.role==='admin' ? 'Admin' : 'Xodim';
+    var rl = u.role==='admin' ? 'Admin' : (u.role==='ish_boshqaruvchi' ? 'Ish boshqaruvchi' : 'Xodim');
     box.innerHTML = '<span class="auth-chip">&#128100; '+esc(u.name)+' &middot; '+rl+'</span><button class="auth-logout" id="auth-logout-btn">Chiqish</button>';
     var b = document.getElementById('auth-logout-btn'); if(b) b.onclick = logout;
   }
@@ -18985,15 +18989,15 @@ updateProdBadge();
     if(!us.length){ box.innerHTML = '<div class="auth-row-sub" style="padding:4px">Hozircha foydalanuvchi yo\'q.</div>'; return; }
     box.innerHTML = us.map(function(u){
       var letter = (u.name||'?').trim().charAt(0).toUpperCase();
-      var roleTxt = u.role==='admin' ? 'Admin' : 'Xodim';
+      var roleTxt = u.role==='admin' ? 'Admin' : (u.role==='ish_boshqaruvchi' ? 'Ish boshqaruvchi' : 'Xodim');
       var SLAB = { gofra:'Gofra', kasherovka:'Kasherovka', tigel:'Tigel', fleksa:'Fleksa', quloq:'Quloq' };
       var stageTxt = ((u.pages||[]).indexOf('production')!==-1 && u.prodStages && u.prodStages.length) ? (' &middot; 🏭 ' + u.prodStages.map(function(s){ return SLAB[s]||s; }).join(', ')) : '';
-      var access = u.role==='admin' ? 'Barcha bo\'limlar' : ((u.pages||[]).length + ' ta bo\'lim' + stageTxt + (u.hideOmborSums ? ' &middot; ombor summalari yashirin' : ''));
+      var access = (u.role==='admin'||u.role==='ish_boshqaruvchi') ? 'Barcha bo\'limlar (sozlamalardan tashqari)' : ((u.pages||[]).length + ' ta bo\'lim' + stageTxt + (u.hideOmborSums ? ' &middot; ombor summalari yashirin' : ''));
       var me = u.id===meId ? ' &middot; <b style="color:#1B8A52">siz</b>' : '';
       return '<div class="auth-row">'+
         '<div class="auth-row-main">'+
           '<span class="auth-av">'+esc(letter)+'</span>'+
-          '<div><div class="auth-row-name">'+esc(u.name)+' <span class="auth-badge '+(u.role==='admin'?'admin':'employee')+'">'+roleTxt+'</span></div>'+
+          '<div><div class="auth-row-name">'+esc(u.name)+' <span class="auth-badge '+(u.role==='admin'?'admin':(u.role==='ish_boshqaruvchi'?'manager':'employee'))+'">'+roleTxt+'</span></div>'+
           '<div class="auth-row-sub">📧 '+esc(u.email||u.login||'—')+' &middot; '+access+me+'</div></div>'+
         '</div>'+
         '<div class="auth-row-actions">'+
@@ -19016,6 +19020,7 @@ updateProdBadge();
     var psChecked = (u && u.prodStages) ? u.prodStages : [];
     var stagesHtml = STAGE_DEFS.map(function(d){ var on = psChecked.indexOf(d[0])!==-1 ? 'checked' : ''; return '<label class="auth-pg"><input type="checkbox" value="'+d[0]+'" '+on+'>'+d[1]+'</label>'; }).join('');
     var isAdmin = u && u.role==='admin';
+    var isIB = u && u.role==='ish_boshqaruvchi';
     var modal = document.createElement('div'); modal.id = 'auth-modal';
     modal.innerHTML =
       '<div class="auth-modal-box">'+
@@ -19026,11 +19031,13 @@ updateProdBadge();
           '<div class="auth-hint" style="margin:-2px 0 2px">Avval Supabase &rarr; Authentication &rarr; Users\'da shu email bilan account oching, keyin shu yerda bo\'limlarni belgilang. Bosh admin: <b>'+esc(ADMIN_EMAIL)+'</b>.</div>'+
           '<div><div class="auth-pages-head" style="margin-top:4px"><b>Rol</b></div>'+
             '<div class="auth-roles">'+
-              '<label><input type="radio" name="uf-role" value="employee" '+(isAdmin?'':'checked')+'> Xodim</label>'+
+              '<label><input type="radio" name="uf-role" value="employee" '+(!isAdmin&&!isIB?'checked':'')+'> Xodim</label>'+
+              '<label><input type="radio" name="uf-role" value="ish_boshqaruvchi" '+(isIB?'checked':'')+'> 👷 Ish boshqaruvchi</label>'+
               '<label><input type="radio" name="uf-role" value="admin" '+(isAdmin?'checked':'')+'> Admin</label>'+
             '</div>'+
+            '<div class="auth-hint" style="margin-top:4px">Ish boshqaruvchi — sozlamalardan tashqari barcha bo\'limlarga kiradi, zakazlarni tasdiqlaydi.</div>'+
           '</div>'+
-          '<div class="auth-pages" id="uf-pages-wrap" style="'+(isAdmin?'display:none':'')+'">'+
+          '<div class="auth-pages" id="uf-pages-wrap" style="'+(isAdmin||isIB?'display:none':'')+'">'+
             '<div class="auth-pages-head"><b>Ochiq bo\'limlar</b><span><button class="lnk" data-authui="sel-all">Hammasi</button> &middot; <button class="lnk" data-authui="sel-none">Tozalash</button></span></div>'+
             '<div class="auth-pages-grid" id="uf-pages">'+pagesHtml+'</div>'+
             '<div class="auth-hint">Faqat belgilangan bo\'limlar xodimga ko\'rinadi. Sozlamalar bo\'limi har doim faqat adminda.</div>'+
@@ -19083,13 +19090,15 @@ updateProdBadge();
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor });
+      var noPages = (role==='admin' || role==='ish_boshqaruvchi');
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
-      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor;
+      var noPages = (role==='admin' || role==='ish_boshqaruvchi');
+      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
@@ -19208,7 +19217,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.25';
+  var APP_VERSION = '1.26';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
@@ -19237,7 +19246,7 @@ updateProdBadge();
   function nowStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
   function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
   function sessionUser(){ var id=_get(LS_SESS); if(!id) return null; var us=arr(LS_USERS); for(var i=0;i<us.length;i++){ if(us[i].id===id) return us[i]; } return null; }
-  function who(){ var u=sessionUser(); if(!u) return "Noma'lum"; return u.name + ' (' + (u.role==='admin'?'admin':'xodim') + ')'; }
+  function who(){ var u=sessionUser(); if(!u) return "Noma'lum"; return u.name + ' (' + (u.role==='admin'?'admin':(u.role==='ish_boshqaruvchi'?'ish boshqaruvchi':'xodim')) + ')'; }
   function isAdmin(){ var u=sessionUser(); return !!(u && u.role==='admin'); }
   function toast(msg){
     var t=document.createElement('div'); t.textContent=msg;
