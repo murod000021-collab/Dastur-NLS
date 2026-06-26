@@ -6326,6 +6326,7 @@ function confirmProdOrder(orderId) {
     id: Date.now(),
     orderId: o.id, orderNum: o.orderNum, client: o.client,
     orderName: o.orderName || o.note || '',
+    fayl: o.fayl || '',
     qty: o.qty || 0,
     perSheet: o.perSheet || 1,
     sheets: o.sheets || Math.ceil((o.qty || 0) / Math.max(1, o.perSheet || 1)),
@@ -6383,6 +6384,7 @@ function renderProdTab(tab) {
     // 🟫/⬜ Orqa taraf rangi (karobka orqasi): jigarrang yoki oq
     var isOqBack  = po.tagColor === 'oq';
     var backBadge = '<span style="display:inline-flex;align-items:center;gap:5px;background:' + (isOqBack?'#ffffff':'#f3e3d0') + ';border:1.5px solid ' + (isOqBack?'#cbd5e1':'#c8915a') + ';border-radius:8px;padding:2px 10px;font-size:0.8rem;font-weight:800;color:' + (isOqBack?'#475569':'#8a4b1a') + '">' + (isOqBack?'⬜ Orqasi oq':'🟫 Orqasi jigarrang') + '</span>';
+    var backBadgeSmall = '<span style="font-size:0.68rem;background:' + (isOqBack?'#fff':'#f3e3d0') + ';border:1px solid ' + (isOqBack?'#cbd5e1':'#c8915a') + ';border-radius:5px;padding:1px 6px;color:' + (isOqBack?'#475569':'#8a4b1a') + ';font-weight:700">' + (isOqBack?'⬜ Oq':'🟫 Jigarang') + '</span>';
     // Bosqich holatlari mini ko'rinish
     var stagesHtml = PROD_TABS.map(function(t, idx){
       if (!(po.stages ? po.stages[t] : (t==='gofra'||t==='kasherovka'||t==='tigel'))) return '';
@@ -6393,72 +6395,93 @@ function renderProdTab(tab) {
         ': ' + d.toLocaleString('uz-UZ') +
       '</span>';
     }).filter(Boolean).join(' ');
-    return '<div style="border:1.5px solid ' + (isDone?'#a9dfbf':'#dce3ea') + ';border-radius:12px;padding:14px 16px;margin-bottom:10px;background:' + (isDone?'#f0faf4':'#fff') + '">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">' +
-        '<div style="flex:1;min-width:200px">' +
-          '<div style="font-weight:800;color:#1a3c5e;font-size:0.95rem;display:flex;align-items:center;flex-wrap:wrap;gap:8px">' +
-            '<span>#' + (po.orderNum||'?') + ' — ' + po.client + '</span>' +
-            (po.orderName ? '<span style="background:#efeaff;border:1.5px solid #c9b9f0;border-radius:8px;padding:2px 10px;font-size:0.85rem;font-weight:800;color:#5b3fa0">📝 ' + po.orderName + '</span>' : '') +
-            backBadge +
-            '<span style="background:#f8f9f0;border:1.5px solid #a9dfbf;border-radius:8px;padding:2px 10px;font-size:0.8rem;font-weight:800;color:#1a6b3a">✅ Tayyor: ' + tayyor.toLocaleString('uz-UZ') + ' dona</span>' +
-          '</div>' +
-          (LIST_STAGES.indexOf(tab) >= 0
-            ? '<div style="margin-top:5px;background:#fff8e1;border:1.5px solid #f9ca24;border-radius:8px;padding:5px 12px;font-size:0.83rem;font-weight:700;color:#7d5a00;display:inline-flex;gap:6px;align-items:center">' +
-                '<span style="font-size:0.75rem;color:#555;font-weight:400">' + (po.qty||0).toLocaleString('uz-UZ') + ' dona =</span>' +
-                ' <span style="font-size:1.05rem;color:#1a3c5e;font-weight:900">' + stageRequired(po, tab).toLocaleString('uz-UZ') + ' list</span>' +
-              '</div>'
-            : '') +
-          '<div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:8px">' +
-            '<span style="display:inline-flex;align-items:center;gap:8px;background:#eaf1fc;border:2px solid #b8d2f4;border-radius:11px;padding:6px 15px">' +
-              '<span style="font-size:0.68rem;color:#5b7aa8;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">Format</span>' +
-              '<span style="font-size:1.4rem;font-weight:900;color:#134A9E;line-height:1">' + (po.format||'—') + '</span>' +
-            '</span>' +
-            '<span style="display:inline-flex;align-items:center;gap:8px;background:#f4f6f9;border:2px solid #d5dde6;border-radius:11px;padding:6px 15px">' +
-              '<span style="font-size:0.68rem;color:#7a899c;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">Profil</span>' +
-              '<span style="font-size:1.4rem;font-weight:900;color:#3a4655;line-height:1">' + (po.profil==='macro'?'Macro':'Micro') + '</span>' +
-            '</span>' +
-          '</div>' +
-          '<div style="font-size:0.82rem;color:#666;margin-top:6px;display:flex;flex-wrap:wrap;gap:10px">' +
-            '<span><b>Sloy:</b> ' + (po.sloy||'—') + '</span>' +
-            (po.boxSize ? '<span><b>Quti:</b> ' + po.boxSize + '</span>' : '') +
-          '</div>' +
-          '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:0.88rem;align-items:center">' +
-            '<span>Kerak: <b style="color:#c0392b">' + required.toLocaleString('uz-UZ') + ' ' + unit + '</b>' + listInfo + '</span>' +
-            '<span>Bu bosqich: <b style="color:#27ae60">' + done.toLocaleString('uz-UZ') + ' ' + unit + '</b> ' +
-              (done > 0 ? '<button onclick="editProdProgress(' + po.id + ',\'' + tab + '\')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:#2d6a9f;padding:0 2px" title="O\'zgartirish">✏️</button>' : '') +
-            '</span>' +
-            '<span>Qo\'shish mumkin: <b style="color:' + (canAdd>0?'#e67e22':'#27ae60') + '">' + canAdd.toLocaleString('uz-UZ') + ' ' + unit + '</b></span>' +
-            (tab === 'gofra' ? '<span style="font-size:0.74rem;color:#a07b1a;background:#fef3d6;border:1px solid #f0c674;border-radius:6px;padding:2px 9px;font-weight:700">📦 Brak/ortiqcha pechat uchun +' + Math.round(FIRST_STAGE_OVERAGE*100) + '% zaxira</span>' : '') +
-          '</div>' +
-          '<div style="margin-top:8px;background:#f0f4f8;border-radius:20px;height:10px;overflow:hidden">' +
-            '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:20px;transition:width 0.4s"></div>' +
-          '</div>' +
-          '<div style="font-size:0.72rem;color:#888;margin-top:2px">' + pct + '% — Bu bosqich</div>' +
-          (stagesHtml ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">' + stagesHtml + '</div>' : '') +
-        '</div>' +
-        (isDone
+    var cardBodyId = 'ptab-body-' + tab + '-' + po.id;
+    var cardArrId  = 'ptab-arr-' + tab + '-' + po.id;
+    // SARLAVHA (doim ko'rinib turadi, bosish bilan ochiladi/yopiladi)
+    var cardHeader = '<div onclick="toggleProdCard(\'' + cardBodyId + '\',\'' + cardArrId + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:4px;padding:6px 12px;user-select:none">'
+      + '<div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden">'
+        + '<span style="font-size:0.85rem;font-weight:800;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">#' + (po.orderNum||'?') + ' — ' + po.client + '</span>'
+        + backBadgeSmall
+        + '<span style="font-size:0.66rem;background:#f4f6f9;color:#3a4655;border:1px solid #d5dde6;border-radius:4px;padding:1px 5px;font-weight:700;white-space:nowrap">' + (po.profil==='macro'?'Macro':'Micro') + '</span>'
+        + (po.format ? '<span style="font-size:0.66rem;background:#eaf1fc;color:#134A9E;border:1px solid #b8d2f4;border-radius:4px;padding:1px 6px;white-space:nowrap">📏 ' + po.format + '</span>' : '')
+        + (po.orderName ? '<span style="font-size:0.66rem;background:#efeaff;border:1px solid #c9b9f0;border-radius:4px;padding:1px 6px;color:#5b3fa0;font-weight:700;white-space:nowrap">📝 ' + po.orderName + '</span>' : '')
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
+        + (isDone
+            ? '<span style="font-size:0.72rem;background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:5px;padding:1px 7px;font-weight:800">✅ Tayyor</span>'
+            : '<span style="font-size:0.72rem;background:#fff8e1;color:#a04000;border:1px solid #f9c74f;border-radius:5px;padding:1px 7px;font-weight:700">' + pct + '%</span>')
+        + '<span id="' + cardArrId + '" style="font-size:0.72rem;color:#b0bac8">▼</span>'
+      + '</div>'
+    + '</div>'
+    + '<div style="height:3px;background:#f0f4f8;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';transition:width 0.4s"></div></div>';
+    // TANA (yig'ilgan holda yashirin)
+    var cardBody = '<div id="' + cardBodyId + '" style="display:none;padding:12px 16px 14px;border-top:1px solid ' + (isDone?'#a9dfbf':'#dce3ea') + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        + '<div style="flex:1;min-width:200px">'
+          + '<div style="font-weight:800;color:#1a3c5e;font-size:0.95rem;display:flex;align-items:center;flex-wrap:wrap;gap:8px">'
+            + backBadge
+            + '<span style="background:#f8f9f0;border:1.5px solid #a9dfbf;border-radius:8px;padding:2px 10px;font-size:0.8rem;font-weight:800;color:#1a6b3a">✅ Tayyor: ' + tayyor.toLocaleString('uz-UZ') + ' dona</span>'
+          + '</div>'
+          + (LIST_STAGES.indexOf(tab) >= 0
+            ? '<div style="margin-top:5px;background:#fff8e1;border:1.5px solid #f9ca24;border-radius:8px;padding:5px 12px;font-size:0.83rem;font-weight:700;color:#7d5a00;display:inline-flex;gap:6px;align-items:center">'
+                + '<span style="font-size:0.75rem;color:#555;font-weight:400">' + (po.qty||0).toLocaleString('uz-UZ') + ' dona =</span>'
+                + ' <span style="font-size:1.05rem;color:#1a3c5e;font-weight:900">' + stageRequired(po, tab).toLocaleString('uz-UZ') + ' list</span>'
+              + '</div>'
+            : '')
+          + '<div style="margin-top:8px;display:flex;align-items:center;flex-wrap:wrap;gap:8px">'
+            + '<span style="display:inline-flex;align-items:center;gap:8px;background:#eaf1fc;border:2px solid #b8d2f4;border-radius:11px;padding:6px 15px">'
+              + '<span style="font-size:0.68rem;color:#5b7aa8;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">Format</span>'
+              + '<span style="font-size:1.4rem;font-weight:900;color:#134A9E;line-height:1">' + (po.format||'—') + '</span>'
+            + '</span>'
+            + '<span style="display:inline-flex;align-items:center;gap:8px;background:#f4f6f9;border:2px solid #d5dde6;border-radius:11px;padding:6px 15px">'
+              + '<span style="font-size:0.68rem;color:#7a899c;font-weight:800;text-transform:uppercase;letter-spacing:0.4px">Profil</span>'
+              + '<span style="font-size:1.4rem;font-weight:900;color:#3a4655;line-height:1">' + (po.profil==='macro'?'Macro':'Micro') + '</span>'
+            + '</span>'
+          + '</div>'
+          + '<div style="font-size:0.82rem;color:#666;margin-top:6px;display:flex;flex-wrap:wrap;gap:10px">'
+            + '<span><b>Sloy:</b> ' + (po.sloy||'—') + '</span>'
+            + (po.boxSize ? '<span><b>Quti:</b> ' + po.boxSize + '</span>' : '')
+          + '</div>'
+          + '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:12px;font-size:0.88rem;align-items:center">'
+            + '<span>Kerak: <b style="color:#c0392b">' + required.toLocaleString('uz-UZ') + ' ' + unit + '</b>' + listInfo + '</span>'
+            + '<span>Bu bosqich: <b style="color:#27ae60">' + done.toLocaleString('uz-UZ') + ' ' + unit + '</b> '
+              + (done > 0 ? '<button onclick="editProdProgress(' + po.id + ',\'' + tab + '\')" style="background:none;border:none;cursor:pointer;font-size:0.85rem;color:#2d6a9f;padding:0 2px" title="O\'zgartirish">✏️</button>' : '')
+            + '</span>'
+            + '<span>Qo\'shish mumkin: <b style="color:' + (canAdd>0?'#e67e22':'#27ae60') + '">' + canAdd.toLocaleString('uz-UZ') + ' ' + unit + '</b></span>'
+            + (tab === 'gofra' ? '<span style="font-size:0.74rem;color:#a07b1a;background:#fef3d6;border:1px solid #f0c674;border-radius:6px;padding:2px 9px;font-weight:700">📦 Brak/ortiqcha pechat uchun +' + Math.round(FIRST_STAGE_OVERAGE*100) + '% zaxira</span>' : '')
+          + '</div>'
+          + '<div style="margin-top:8px;background:#f0f4f8;border-radius:20px;height:10px;overflow:hidden">'
+            + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:20px;transition:width 0.4s"></div>'
+          + '</div>'
+          + '<div style="font-size:0.72rem;color:#888;margin-top:2px">' + pct + '% — Bu bosqich</div>'
+          + (stagesHtml ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">' + stagesHtml + '</div>' : '')
+        + '</div>'
+        + (isDone
           ? '<span style="font-size:1.5rem;align-self:center" title="Bu bosqich tugadi">✅</span>'
           : canAdd <= 0
             ? '<span style="font-size:0.8rem;color:#aaa;align-self:center;white-space:nowrap">⏳ Oldingi bosqich kutilmoqda</span>'
-            : '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">' +
-                (tab === 'gofra' ? buildGofraRollSel(po) : '') +
-                '<div style="display:flex;gap:6px;align-items:center">' +
-                  '<input type="number" id="pinp-' + tab + '-' + po.id + '" placeholder="max ' + canAdd.toLocaleString('uz-UZ') + ' ' + unit + '" min="1" max="' + canAdd + '"' + (tab === 'gofra' ? ' oninput="gofraLiveKg(' + po.id + ',this.value)"' : '') + ' style="width:120px;padding:7px 10px;border:1.5px solid #2d6a9f;border-radius:7px;font-size:0.9rem;outline:none">' +
-                  '<button class="btn btn-success btn-sm" onclick="addProdProgress(' + po.id + ',\'' + tab + '\')" style="white-space:nowrap">+ Qo\'shish</button>' +
-                '</div>' +
-                (tab === 'gofra' ? '<div id="gofra-kg-' + po.id + '" style="font-size:0.79rem;color:#8a5a2b;font-weight:700;min-height:15px;text-align:center"></div>' : '') +
-                '<div style="position:relative;width:100%">' +
-                  '<input type="text" id="pinp-worker-' + tab + '-' + po.id + '" placeholder="👷 Bajaruvchi ismi" autocomplete="off" ' +
-                    'oninput="showWorkerAC(this.value,\'' + tab + '\',' + po.id + ')" ' +
-                    'onfocus="showWorkerAC(this.value,\'' + tab + '\',' + po.id + ')" ' +
-                    'onblur="setTimeout(function(){closeWorkerAC(\'' + tab + '\',' + po.id + ')},180)" ' +
-                    'style="width:100%;padding:6px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:0.85rem;outline:none;box-sizing:border-box">' +
-                  '<div id="worker-ac-' + tab + '-' + po.id + '" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #dce3ea;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.1);z-index:999;max-height:180px;overflow-y:auto;margin-top:2px"></div>' +
-                '</div>' +
-              '</div>'
-        ) +
-      '</div>' +
-    '</div>';
+            : '<div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">'
+                + (tab === 'gofra' ? buildGofraRollSel(po) : '')
+                + '<div style="display:flex;gap:6px;align-items:center">'
+                  + '<input type="number" id="pinp-' + tab + '-' + po.id + '" placeholder="max ' + canAdd.toLocaleString('uz-UZ') + ' ' + unit + '" min="1" max="' + canAdd + '"' + (tab === 'gofra' ? ' oninput="gofraLiveKg(' + po.id + ',this.value)"' : '') + ' style="width:120px;padding:7px 10px;border:1.5px solid #2d6a9f;border-radius:7px;font-size:0.9rem;outline:none">'
+                  + '<button class="btn btn-success btn-sm" onclick="addProdProgress(' + po.id + ',\'' + tab + '\')" style="white-space:nowrap">+ Qo\'shish</button>'
+                + '</div>'
+                + (tab === 'gofra' ? '<div id="gofra-kg-' + po.id + '" style="font-size:0.79rem;color:#8a5a2b;font-weight:700;min-height:15px;text-align:center"></div>' : '')
+                + '<div style="position:relative;width:100%">'
+                  + '<input type="text" id="pinp-worker-' + tab + '-' + po.id + '" placeholder="👷 Bajaruvchi ismi" autocomplete="off" '
+                    + 'oninput="showWorkerAC(this.value,\'' + tab + '\',' + po.id + ')" '
+                    + 'onfocus="showWorkerAC(this.value,\'' + tab + '\',' + po.id + ')" '
+                    + 'onblur="setTimeout(function(){closeWorkerAC(\'' + tab + '\',' + po.id + ')},180)" '
+                    + 'style="width:100%;padding:6px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:0.85rem;outline:none;box-sizing:border-box">'
+                  + '<div id="worker-ac-' + tab + '-' + po.id + '" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #dce3ea;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.1);z-index:999;max-height:180px;overflow-y:auto;margin-top:2px"></div>'
+                + '</div>'
+              + '</div>'
+        )
+      + '</div>'
+    + '</div>';
+    return '<div style="border:1.5px solid ' + (isDone?'#a9dfbf':'#dce3ea') + ';border-radius:10px;margin-bottom:5px;background:' + (isDone?'#f0faf4':'#fff') + ';overflow:hidden">'
+      + cardHeader + cardBody
+    + '</div>';
   }
 
   var html = active.length
@@ -13092,6 +13115,15 @@ function toggleSavdoCard(id) {
   if (arr) arr.textContent = isOpen ? '▼' : '▲';
 }
 
+function toggleProdCard(bodyId, arrId) {
+  var body = document.getElementById(bodyId);
+  var arr  = document.getElementById(arrId);
+  if (!body) return;
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arr) arr.textContent = isOpen ? '▼' : '▲';
+}
+
 // ===== KASSA =====
 var kassaLog = JSON.parse(localStorage.getItem('karo_kassa') || '[]');
 function saveKassa() { localStorage.setItem('karo_kassa', JSON.stringify(kassaLog)); }
@@ -19513,7 +19545,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.33';
+  var APP_VERSION = '1.35';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
