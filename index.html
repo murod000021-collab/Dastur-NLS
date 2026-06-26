@@ -10234,85 +10234,101 @@ function renderOqRequests() {
   if (!pending.length) {
     html += '<p style="text-align:center;padding:24px;color:#aaa">Hozircha so\'rov yo\'q</p>';
   } else {
-    html += '<div style="display:flex;flex-direction:column;gap:12px">';
+    html += '<div style="display:flex;flex-direction:column;gap:5px">';
     pending.forEach(function(r) {
       var initPrice = (r.paperKg && r.oqTotal) ? Math.round(r.oqTotal / r.paperKg) : (r.kgPrice || 0);
       var initTotal = r.paperKg && initPrice ? Math.round(r.paperKg * initPrice) : (r.oqTotal || 0);
 
-      html += '<div style="background:#fffbea;border:2px solid #f5a623;border-radius:12px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">';
+      html += '<div style="border:2px solid #f5a623;border-radius:10px;overflow:hidden;background:#fffbea">';
 
-      // Chap: order ma'lumotlari
-      html += '<div style="flex:1;min-width:220px">';
-      html += '<div style="font-size:1rem;font-weight:800;color:#1a3c5e;margin-bottom:4px">📦 Buyurtma #' + r.orderNum + ' — ' + r.client + '</div>';
-      if (r.orderName) html += '<div style="font-size:0.82rem;color:#5E7191;margin-bottom:10px">' + r.orderName + '</div>';
-
-      // Dona — o'zgarmas
-      html += '<div style="display:inline-flex;background:#e3f2fd;border-radius:8px;padding:6px 14px;align-items:center;gap:6px;margin-bottom:12px">';
-      html += '<span style="font-size:0.72rem;color:#1565c0;font-weight:700">BUYURTMA</span>';
-      html += '<span style="font-size:1.1rem;font-weight:800;color:#0d47a1">' + (r.qty ? r.qty.toLocaleString() : '—') + ' dona</span>';
+      // Compact clickable header
+      html += '<div onclick="toggleOqReq(' + r.id + ')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:9px 13px;user-select:none">';
+        html += '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex:1">';
+          html += '<span style="font-size:0.88rem;font-weight:800;color:#1a3c5e">📦 #' + r.orderNum + ' — ' + r.client + '</span>';
+          if (r.orderName) html += '<span style="font-size:0.72rem;color:#5E7191;background:#f0f4f8;border-radius:5px;padding:1px 7px">' + r.orderName + '</span>';
+          if (r.qty) html += '<span style="font-size:0.7rem;color:#0d47a1;background:#e3f2fd;border-radius:5px;padding:1px 7px;font-weight:700">' + r.qty.toLocaleString() + ' dona</span>';
+          if (r.paperKg) html += '<span style="font-size:0.7rem;color:#1b5e20;background:#e8f5e9;border-radius:5px;padding:1px 7px;font-weight:700">' + r.paperKg + ' kg</span>';
+        html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
+          html += '<span style="font-size:0.7rem;color:#aaa">📅 ' + r.date + '</span>';
+          html += '<span id="oqreq-arr-' + r.id + '" style="font-size:0.78rem;color:#f5a623;margin-left:3px">▼</span>';
+        html += '</div>';
       html += '</div>';
 
-      // Tahrirlash qatori: Kg + Narx/kg + Jami
-      html += '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">';
+      // Expandable body
+      html += '<div id="oqreq-body-' + r.id + '" style="display:none;padding:14px 16px 16px;border-top:2px solid #f5a623">';
 
-      // Kg input
-      html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      html += '<label style="font-size:0.72rem;font-weight:700;color:#388e3c;text-transform:uppercase">Kg miqdori</label>';
-      html += '<input id="oqreq-kg-' + r.id + '" type="text" inputmode="numeric" value="' + (r.paperKg || '') + '"'
-            + ' oninput="oqReqCalcTotal(' + r.id + ')"'
-            + ' style="width:90px;padding:8px 10px;border:2px solid #81c784;border-radius:8px;font-size:1rem;font-weight:700;color:#1b5e20;outline:none;text-align:center">';
-      html += '</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">';
 
-      // Varaq (dona) input
-      html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      html += '<label style="font-size:0.72rem;font-weight:700;color:#1565c0;text-transform:uppercase">Varaq soni (dona)</label>';
-      html += '<input id="oqreq-dona-' + r.id + '" type="text" inputmode="numeric" value="' + (r.sheets || '') + '"'
-            + ' placeholder="varaq"'
-            + ' style="width:110px;padding:8px 10px;border:2px solid #90caf9;border-radius:8px;font-size:1rem;font-weight:700;color:#0d47a1;outline:none;text-align:center">';
-      html += '</div>';
+        // Chap: order ma'lumotlari
+        html += '<div style="flex:1;min-width:220px">';
+        html += '<div style="font-size:1rem;font-weight:800;color:#1a3c5e;margin-bottom:4px">📦 Buyurtma #' + r.orderNum + ' — ' + r.client + '</div>';
+        if (r.orderName) html += '<div style="font-size:0.82rem;color:#5E7191;margin-bottom:10px">' + r.orderName + '</div>';
 
-      // Narx/kg input
-      html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      html += '<label style="font-size:0.72rem;font-weight:700;color:#e65100;text-transform:uppercase">1 kg narxi (so\'m)</label>';
-      html += '<input id="oqreq-price-' + r.id + '" type="text" inputmode="numeric" value="' + (initPrice || '') + '"'
-            + ' oninput="oqReqCalcTotal(' + r.id + ')"'
-            + ' placeholder="narx/kg"'
-            + ' style="width:130px;padding:8px 10px;border:2px solid #ffb74d;border-radius:8px;font-size:1rem;font-weight:700;color:#bf360c;outline:none;text-align:center">';
-      html += '</div>';
+        html += '<div style="display:inline-flex;background:#e3f2fd;border-radius:8px;padding:6px 14px;align-items:center;gap:6px;margin-bottom:12px">';
+        html += '<span style="font-size:0.72rem;color:#1565c0;font-weight:700">BUYURTMA</span>';
+        html += '<span style="font-size:1.1rem;font-weight:800;color:#0d47a1">' + (r.qty ? r.qty.toLocaleString() : '—') + ' dona</span>';
+        html += '</div>';
 
-      // Jami summa (tahrirlash mumkin)
-      html += '<div style="display:flex;flex-direction:column;gap:4px">';
-      html += '<label style="font-size:0.72rem;font-weight:700;color:#7b1fa2;text-transform:uppercase">Jami summa (so\'m)</label>';
-      html += '<input id="oqreq-total-' + r.id + '" type="text" inputmode="numeric"'
-            + ' value="' + (initTotal > 0 ? initTotal.toLocaleString('uz-UZ') : '') + '"'
-            + ' placeholder="summa"'
-            + ' oninput="oqReqCalcPrice(' + r.id + ')"'
-            + ' style="width:140px;padding:8px 10px;border:2px solid #ce93d8;border-radius:8px;font-size:1rem;font-weight:700;color:#7b1fa2;outline:none;text-align:center">';
-      html += '</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">';
 
-      html += '</div>'; // flex qatori end
+        html += '<div style="display:flex;flex-direction:column;gap:4px">';
+        html += '<label style="font-size:0.72rem;font-weight:700;color:#388e3c;text-transform:uppercase">Kg miqdori</label>';
+        html += '<input id="oqreq-kg-' + r.id + '" type="text" inputmode="numeric" value="' + (r.paperKg || '') + '"'
+              + ' oninput="oqReqCalcTotal(' + r.id + ')"'
+              + ' style="width:90px;padding:8px 10px;border:2px solid #81c784;border-radius:8px;font-size:1rem;font-weight:700;color:#1b5e20;outline:none;text-align:center">';
+        html += '</div>';
 
-      // Kimdan olingan
-      html += '<div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;position:relative;max-width:420px">';
-      html += '<label style="font-size:0.72rem;font-weight:700;color:#1565c0;text-transform:uppercase">🏢 Kimdan olingan</label>';
-      html += '<input id="oqreq-firma-' + r.id + '" type="text" autocomplete="off"'
-            + ' value="' + (r.oqFirma || '') + '"'
-            + ' placeholder="Firma / yetkazuvchi nomi"'
-            + ' oninput="showOqFirmaAC(' + r.id + ',this.value)"'
-            + ' onfocus="showOqFirmaAC(' + r.id + ',this.value)"'
-            + ' onblur="setTimeout(function(){closeOqFirmaAC(' + r.id + ')},200)"'
-            + ' style="width:100%;padding:8px 12px;border:2px solid #90caf9;border-radius:8px;font-size:0.92rem;outline:none;color:#1a3c5e">';
-      html += '<div id="oqreq-firma-ac-' + r.id + '" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1.5px solid #90caf9;border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.13);z-index:9999;max-height:200px;overflow-y:auto"></div>';
-      html += '</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:4px">';
+        html += '<label style="font-size:0.72rem;font-weight:700;color:#1565c0;text-transform:uppercase">Varaq soni (dona)</label>';
+        html += '<input id="oqreq-dona-' + r.id + '" type="text" inputmode="numeric" value="' + (r.sheets || '') + '"'
+              + ' placeholder="varaq"'
+              + ' style="width:110px;padding:8px 10px;border:2px solid #90caf9;border-radius:8px;font-size:1rem;font-weight:700;color:#0d47a1;outline:none;text-align:center">';
+        html += '</div>';
 
-      html += '<div style="font-size:0.76rem;color:#aaa;margin-top:6px">📅 ' + r.date + '</div>';
-      html += '</div>'; // chap blok end
+        html += '<div style="display:flex;flex-direction:column;gap:4px">';
+        html += '<label style="font-size:0.72rem;font-weight:700;color:#e65100;text-transform:uppercase">1 kg narxi (so\'m)</label>';
+        html += '<input id="oqreq-price-' + r.id + '" type="text" inputmode="numeric" value="' + (initPrice || '') + '"'
+              + ' oninput="oqReqCalcTotal(' + r.id + ')"'
+              + ' placeholder="narx/kg"'
+              + ' style="width:130px;padding:8px 10px;border:2px solid #ffb74d;border-radius:8px;font-size:1rem;font-weight:700;color:#bf360c;outline:none;text-align:center">';
+        html += '</div>';
 
-      // O'ng: tugmalar
-      html += '<div style="display:flex;flex-direction:column;gap:8px;min-width:150px;align-self:center">';
-      html += '<button class="btn btn-success" onclick="approveOqRequest(' + r.id + ')" style="font-size:0.9rem;padding:11px 16px">✅ Qabul qilindi</button>';
-      html += '<button class="btn btn-danger" onclick="rejectOqRequest(' + r.id + ')" style="font-size:0.9rem;padding:11px 16px">❌ Qabul qilinmadi</button>';
-      html += '</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:4px">';
+        html += '<label style="font-size:0.72rem;font-weight:700;color:#7b1fa2;text-transform:uppercase">Jami summa (so\'m)</label>';
+        html += '<input id="oqreq-total-' + r.id + '" type="text" inputmode="numeric"'
+              + ' value="' + (initTotal > 0 ? initTotal.toLocaleString('uz-UZ') : '') + '"'
+              + ' placeholder="summa"'
+              + ' oninput="oqReqCalcPrice(' + r.id + ')"'
+              + ' style="width:140px;padding:8px 10px;border:2px solid #ce93d8;border-radius:8px;font-size:1rem;font-weight:700;color:#7b1fa2;outline:none;text-align:center">';
+        html += '</div>';
+
+        html += '</div>';
+
+        html += '<div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;position:relative;max-width:420px">';
+        html += '<label style="font-size:0.72rem;font-weight:700;color:#1565c0;text-transform:uppercase">🏢 Kimdan olingan</label>';
+        html += '<input id="oqreq-firma-' + r.id + '" type="text" autocomplete="off"'
+              + ' value="' + (r.oqFirma || '') + '"'
+              + ' placeholder="Firma / yetkazuvchi nomi"'
+              + ' oninput="showOqFirmaAC(' + r.id + ',this.value)"'
+              + ' onfocus="showOqFirmaAC(' + r.id + ',this.value)"'
+              + ' onblur="setTimeout(function(){closeOqFirmaAC(' + r.id + ')},200)"'
+              + ' style="width:100%;padding:8px 12px;border:2px solid #90caf9;border-radius:8px;font-size:0.92rem;outline:none;color:#1a3c5e">';
+        html += '<div id="oqreq-firma-ac-' + r.id + '" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1.5px solid #90caf9;border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.13);z-index:9999;max-height:200px;overflow-y:auto"></div>';
+        html += '</div>';
+
+        html += '<div style="font-size:0.76rem;color:#aaa;margin-top:6px">📅 ' + r.date + '</div>';
+        html += '</div>';
+
+        // O'ng: tugmalar
+        html += '<div style="display:flex;flex-direction:column;gap:8px;min-width:150px;align-self:center">';
+        html += '<button class="btn btn-success" onclick="approveOqRequest(' + r.id + ')" style="font-size:0.9rem;padding:11px 16px">✅ Qabul qilindi</button>';
+        html += '<button class="btn btn-danger" onclick="rejectOqRequest(' + r.id + ')" style="font-size:0.9rem;padding:11px 16px">❌ Qabul qilinmadi</button>';
+        html += '</div>';
+
+        html += '</div>';
+
+      html += '</div>'; // expandable body end
 
       html += '</div>'; // karta end
     });
@@ -13056,6 +13072,15 @@ function renderSavdo() {
       + '</div>'
     + '</div>';
   }).join('');
+}
+
+function toggleOqReq(id) {
+  var body = document.getElementById('oqreq-body-' + id);
+  var arr  = document.getElementById('oqreq-arr-' + id);
+  if (!body) return;
+  var isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arr) arr.textContent = isOpen ? '▼' : '▲';
 }
 
 function toggleSavdoCard(id) {
@@ -19488,7 +19513,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.32';
+  var APP_VERSION = '1.33';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
