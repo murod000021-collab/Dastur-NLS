@@ -4974,17 +4974,17 @@ function updateCalcPreview() {
 
   var is5sloy = sloy === '5';
 
-  // Ustki oq qog'oz kg
-  var ustKg = fw&&fh&&ustGr&&qty ? parseFloat((fw*fh*ustGr*qty/10000000).toFixed(2)) : 0;
-  // Tag (jigarrang/oq) qog'oz kg
-  var tagKg = fw&&fh&&tagGr&&qty ? parseFloat((fw*fh*tagGr*qty/10000000).toFixed(2)) : 0;
+  // Ustki oq qog'oz kg (list hisobida)
+  var ustKg = fw&&fh&&ustGr&&sh ? parseFloat((fw*fh*ustGr*sh/10000000).toFixed(2)) : 0;
+  // Tag (jigarrang/oq) qog'oz kg (list hisobida)
+  var tagKg = fw&&fh&&tagGr&&sh ? parseFloat((fw*fh*tagGr*sh/10000000).toFixed(2)) : 0;
   // Gofra qatlam: micro=70%, macro=50%
   var coeff      = (profil && profil.value==='macro') ? 0.50 : 0.70;
   var gofraGr    = jigarGr / coeff;
   var gofraCount = is5sloy ? 2 : 1;
-  var gofraKg    = fw&&fh&&qty ? parseFloat((fw*fh*gofraGr*qty*gofraCount/10000000).toFixed(2)) : 0;
+  var gofraKg    = fw&&fh&&sh ? parseFloat((fw*fh*gofraGr*sh*gofraCount/10000000).toFixed(2)) : 0;
   // 5-sloy: o'rta jigarrang liner (jigarrang gramajda, 1 qatlam)
-  var extraMiddleKg = (is5sloy && fw&&fh&&qty) ? parseFloat((fw*fh*jigarGr*qty/10000000).toFixed(2)) : 0;
+  var extraMiddleKg = (is5sloy && fw&&fh&&sh) ? parseFloat((fw*fh*jigarGr*sh/10000000).toFixed(2)) : 0;
   var totalKg = parseFloat((ustKg + tagKg + gofraKg + extraMiddleKg).toFixed(2));
 
   // paperkg hidden
@@ -5086,13 +5086,13 @@ function calcPaperKg() {
   var fw=parseFloat(document.getElementById('o-fw').value)||0;
   var fh=parseFloat(document.getElementById('o-fh').value)||0;
   var gr=parseFloat(document.getElementById('o-gramaj').value)||0;
-  var qty=parseFloat(document.getElementById('o-qty').value)||0;
+  var sh=parseFloat(document.getElementById('o-sheets').value)||0;
   var el=document.getElementById('o-paperkg');
   var pr=document.getElementById('o-kg-preview');
-  if(!fw||!fh||!gr||!qty){if(el)el.value='';if(pr)pr.textContent='';return;}
-  var kg=parseFloat((fw*fh*gr*qty/10000000).toFixed(2));
+  if(!fw||!fh||!gr||!sh){if(el)el.value='';if(pr)pr.textContent='';return;}
+  var kg=parseFloat((fw*fh*gr*sh/10000000).toFixed(2));
   if(el)el.value=kg+' kg';
-  if(pr)pr.textContent='\u{1F4D0} '+fw+'\xD7'+fh+'\xD7'+gr+'gr \xD7 '+qty.toLocaleString()+' = '+kg+' kg';
+  if(pr)pr.textContent='\u{1F4D0} '+fw+'\xD7'+fh+'\xD7'+gr+'gr \xD7 '+sh.toLocaleString()+' list = '+kg+' kg';
 }
 function showClientAC(val) {
   var ac = document.getElementById('client-ac');
@@ -5620,7 +5620,7 @@ function addOrder() {
   var fw      = parseFloat(document.getElementById('o-fw').value)||0;
   var fh      = parseFloat(document.getElementById('o-fh').value)||0;
   var gr      = parseFloat(document.getElementById('o-gramaj').value)||0;
-  var kg      = fw&&fh&&gr&&qtyInput ? parseFloat((fw*fh*gr*qtyInput/10000000).toFixed(2)) : 0;
+  var kg      = fw&&fh&&gr&&sh ? parseFloat((fw*fh*gr*sh/10000000).toFixed(2)) : 0;
   var boxsize = document.getElementById('o-boxsize').value.trim();
   var papernote=document.getElementById('o-papernote').value.trim();
   var profilEl= document.querySelector('input[name="o-profil"]:checked');
@@ -5997,7 +5997,7 @@ function updateOrder() {
   const fh = parseFloat(document.getElementById('o-fh').value)       || 0;
   const gr = parseFloat(document.getElementById('o-gramaj').value)   || 0;
   const qty = ps * sh;
-  const kg  = fw && fh && gr && qty ? parseFloat((fw*fh*gr*qty/10000000).toFixed(2)) : o.paperKg;
+  const kg  = fw && fh && gr && sh ? parseFloat((fw*fh*gr*sh/10000000).toFixed(2)) : o.paperKg;
 
   var svc = oReadServices();
   if (!svc.ok) return;
@@ -18775,11 +18775,10 @@ updateProdBadge();
   }
   function applyProdStageAccess(){
     var u = currentUser(); if(!u) return;
-    var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length || !!(u.canApproveOrders);
-    // Bosqichga biriktirilgan xodim — «Tasdiq kutilayotgan zakazlar» (zakazni tasdiqlash) kartasini ko'rmasin
-    // (canApproveOrders=true bo'lsa — bosqich cheklangan bo'lsa ham H9 ko'rinadi)
+    var unrestricted = (u.role==='admin') || !u.prodStages || !u.prodStages.length;
+    // Barcha foydalanuvchilar «Tasdiq kutilayotgan zakazlar» kartasini ko'radi
     var aoCard = document.getElementById('active-orders-card');
-    if(aoCard) aoCard.style.display = unrestricted ? '' : 'none';
+    if(aoCard) aoCard.style.display = '';
     var curVisible = null;
     PROD_STAGES.forEach(function(st){
       var allowed = unrestricted || (u.prodStages.indexOf(st) !== -1);
@@ -19034,10 +19033,6 @@ updateProdBadge();
             '<div class="auth-pages-head" style="margin-top:12px"><b>🏭 Ishlab chiqarish bosqichlari</b> <span style="font-size:0.74rem;color:#888;font-weight:600">(bo\'sh = barchasi)</span></div>'+
             '<div class="auth-pages-grid" id="uf-stages">'+stagesHtml+'</div>'+
             '<div class="auth-hint">Bosqich belgilasangiz «🏭 Ishlab chiqarish» avtomat ochiladi va xodim <b>faqat o\'sha bosqich(lar)ni</b> ko\'radi (boshqa bosqichlar va «tasdiq kutilayotgan zakazlar» ko\'rinmaydi). Har xil xodimga har xil bosqich bering. Hech bosqich belgilanmasa — barcha 5 bosqich ochiq.</div>'+
-            '<label class="auth-pg" id="uf-approveorders-row" style="margin-top:8px;border-color:#93D8B2;background:#f0fff6;font-weight:600">'+
-              '<input type="checkbox" id="uf-approveorders" '+(u&&u.canApproveOrders?'checked':'')+'>'+
-              '&#9989; Bosqich cheklansa ham «⏳ Tasdiq kutilayotgan zakazlar» (H9) ko\'rinsin'+
-            '</label>'+
           '</div>'+
           '<div class="auth-err" id="uf-err"></div>'+
         '</div>'+
@@ -19069,7 +19064,6 @@ updateProdBadge();
     var pages = Array.prototype.slice.call(document.querySelectorAll('#uf-pages input:checked')).map(function(c){ return c.value; });
     var prodStages = Array.prototype.slice.call(document.querySelectorAll('#uf-stages input:checked')).map(function(c){ return c.value; });
     var hideOmbor = !!(document.getElementById('uf-hideombor') && document.getElementById('uf-hideombor').checked);
-    var canApproveOrders = !!(document.getElementById('uf-approveorders') && document.getElementById('uf-approveorders').checked);
     // Bosqich belgilangan bo'lsa — «🏭 Ishlab chiqarish» bo'limini avtomat ochamiz (aks holda cheklov ta'sir qilmaydi)
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
@@ -19081,13 +19075,13 @@ updateProdBadge();
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor, canApproveOrders: role==='admin'?false:canApproveOrders });
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: role==='admin'?[]:pages, prodStages: role==='admin'?[]:prodStages, hideOmborSums: role==='admin'?false:hideOmbor });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
-      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor; existing.canApproveOrders = role==='admin'?false:canApproveOrders;
+      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = role==='admin'?[]:pages; existing.prodStages = role==='admin'?[]:prodStages; existing.hideOmborSums = role==='admin'?false:hideOmbor;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
@@ -19206,7 +19200,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.22';
+  var APP_VERSION = '1.24';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
