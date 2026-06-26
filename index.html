@@ -2559,6 +2559,7 @@
               <th>Gramaj (g/m²)</th>
               <th>Kelib chiqishi</th>
               <th>Miqdori (dona)</th>
+              <th>🖨️ Pechat (so'm/varaq)</th>
               <th>Umumiy summa (so'm) <span style="color:#e74c3c">*</span></th>
               <th>Hisoblangan kg</th>
               <th>1 kg narxi</th>
@@ -8736,6 +8737,7 @@ function addKesilganRow() {
       </select>
     </td>
     <td>${inp('ksl-qty','5000',80)}</td>
+    <td>${inp('ksl-pechat','0',90)}</td>
     <td>
       <input type="number" class="ksl-sum input-required" data-rid="${rid}" placeholder="Majburiy!" value="0" min="0"
         style="width:130px;padding:6px 8px;border:1.5px solid #e74c3c;border-radius:6px;outline:none;background:#fff5f5"
@@ -8840,6 +8842,7 @@ function savePrixod() {
       const gr    = parseFloat(tr.querySelector('.ksl-gr')?.value)  || 0;
       const org   = tr.querySelector('.ksl-origin')?.value || '';
       const qty   = parseFloat(tr.querySelector('.ksl-qty')?.value) || 0;
+      const pechatPV = parseFloat(tr.querySelector('.ksl-pechat')?.value) || 0;
       const rowSum = parseFloat(tr.querySelector('.ksl-sum')?.value) || 0;
       if (w && h && gr && qty > 0) {
         if (!rowSum || rowSum <= 0) {
@@ -8860,6 +8863,7 @@ function savePrixod() {
           qty, remaining: qty,
           totalSum: rowSum, perKg,
           calcKg, calcKgRemaining: calcKg,
+          pechatSum: pechatPV,
           status: 'mavjud', leftover: isLeftover
         };
         oqKesilgan.push(keItem);
@@ -9479,6 +9483,7 @@ function renderOqStock() {
           <td>
             <div style="font-weight:700;color:#1a3c5e;font-size:0.88rem">${curSum ? curSum.toLocaleString()+' so\'m' : '—'}</div>
             ${r.perKg ? `<div style="font-size:0.74rem;color:#d97706;margin-top:2px">${r.perKg.toLocaleString()} so\'m/kg</div>` : ''}
+            ${r.pechatSum ? `<div style="font-size:0.72rem;color:#1565c0;margin-top:2px">🖨️ ${r.pechatSum.toLocaleString()} so\'m/varaq pechat</div>` : ''}
             ${r.serviceSum ? `<div style="font-size:0.72rem;color:#7b1fa2;margin-top:2px">+${Math.round((r.serviceSum||0)*(r.remaining||0)/(r.qty||1)).toLocaleString()} so'm xizmat</div>` : ''}
           </td>
           <td><span class="badge ${isMavjud ? 'badge-ok' : 'badge-low'}">${isMavjud ? '✅ Mavjud' : '📭 Tugagan'}</span></td>
@@ -19472,7 +19477,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.30';
+  var APP_VERSION = '1.31';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
