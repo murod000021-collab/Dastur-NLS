@@ -170,7 +170,7 @@
             var changed=false;
             if(p.eventType==='DELETE'){ var ok=p.old; if(ok&&ok.k) changed=applyRemote(ok.k, null, true); }
             else { var nw=p.new; if(nw&&nw.k) changed=applyRemote(nw.k, nw.v, false); }
-            if(changed) scheduleRerender();
+            if(changed){ clearTimeout(rerenderTimer); rerenderTimer=setTimeout(function(){ var _pg=activePageId(); try{ if(_pg) sessionStorage.setItem('karo_reload_page',_pg); }catch(e){} location.reload(); },700); }
           }catch(e){}
         })
         .subscribe(function(status){
@@ -3210,11 +3210,24 @@
           <select id="xr-in-qarzdor" onchange="xrInQarzdorChanged()" style="width:100%;padding:9px 12px;border:1.5px solid #a9dfbf;border-radius:8px;font-size:0.88rem;outline:none;background:#fff;font-weight:600"></select>
         </div>
         <div class="form-group" id="xr-in-supplier-wrap"><label>Kimdan</label><input type="text" id="xr-in-supplier" list="kirim-mijozlar" placeholder="Mijoz yoki kompaniya" autocomplete="off"><datalist id="kirim-mijozlar"></datalist></div>
-        <div class="form-group"><label>Summa (so'm)</label><input type="number" id="xr-in-amount" placeholder="0" min="0" style="font-weight:800;font-size:1.05rem;color:#1a6b3a"></div>
+        <div class="form-group"><label>Valyuta turi</label>
+          <select id="xr-in-currency" onchange="xrInCurrencyChanged()" style="width:100%;padding:9px 12px;border:1.5px solid #a9dfbf;border-radius:8px;font-size:0.88rem;outline:none;background:#fff;font-weight:600">
+            <option value="uzs">🇺🇿 So'm</option>
+            <option value="usd">🇺🇸 Dollar ($)</option>
+          </select>
+        </div>
+        <div class="form-group"><label id="xr-in-amount-label">Summa (so'm)</label><input type="number" id="xr-in-amount" placeholder="0" min="0" oninput="xrUpdateKursResult()" style="font-weight:800;font-size:1.05rem;color:#1a6b3a"></div>
+        <div class="form-group" id="xr-in-kurs-wrap" style="display:none">
+          <label>Dollar kursi (1 $ = ? so'm)</label>
+          <input type="number" id="xr-in-kurs" placeholder="masalan: 12700" min="0" oninput="xrUpdateKursResult()" style="width:100%;padding:9px 12px;border:1.5px solid #a9dfbf;border-radius:8px;font-size:0.95rem;outline:none">
+          <div id="xr-in-kurs-result" style="margin-top:5px;font-size:0.88rem;color:#555;min-height:18px"></div>
+        </div>
         <div class="form-group"><label>To'lov turi</label>
           <select id="xr-in-paytype" style="width:100%;padding:9px 12px;border:1.5px solid #a9dfbf;border-radius:8px;font-size:0.88rem;outline:none;background:#fff;font-weight:600">
-            <option value="naqt">💵 Naqt</option>
+            <option value="naqt">💵 Naqt (so'm / $)</option>
             <option value="perech">🏦 Perechisleniye</option>
+            <option value="balans">💰 Balansdagi pul</option>
+            <option value="predoplata">🟢 Oldindan to'lov</option>
           </select>
         </div>
         <div class="form-group"><label>Izoh</label><input type="text" id="xr-in-note" placeholder="Ixtiyoriy"></div>
@@ -3265,8 +3278,10 @@
         <div class="form-group"><label>Summa (so'm)</label><input type="number" id="xr-out-amount" placeholder="0" min="0" style="font-weight:800;font-size:1.05rem;color:#922b21"></div>
         <div class="form-group"><label>To'lov turi</label>
           <select id="xr-out-paytype" style="width:100%;padding:9px 12px;border:1.5px solid #f5c6cb;border-radius:8px;font-size:0.88rem;outline:none;background:#fff;font-weight:600">
-            <option value="naqt">💵 Naqt</option>
+            <option value="naqt">💵 Naqt (so'm / $)</option>
             <option value="perech">🏦 Perechisleniye</option>
+            <option value="balans">💰 Balansdagi pul</option>
+            <option value="predoplata">🟢 Oldindan to'lov</option>
           </select>
         </div>
         <div class="form-group"><label>Izoh</label><input type="text" id="xr-out-note" placeholder="Ixtiyoriy"></div>
@@ -3300,6 +3315,7 @@
             <th>Kategoriya</th>
             <th>Tavsif</th>
             <th>Kimdan/Kimga</th>
+            <th>To'lov turi</th>
             <th>Hujjat №</th>
             <th>Summa</th>
             <th>Izoh</th>
@@ -3704,6 +3720,7 @@
     <div class="stat-card orange"><div class="label">💰 Balansdagi pul</div><div class="value" id="ks-balans" style="font-size:1.25rem">0</div><div class="sub" id="ks-balans-sub">naqt + perechisleniye</div></div>
     <div class="stat-card" style="border-left-color:#16a34a"><div class="label">🟢 Oldindan to'lov</div><div class="value" id="ks-predoplata" style="font-size:1.25rem;color:#16a34a">0</div><div class="sub">predoplata · bu pul hali sizniki emas</div></div>
     <div class="stat-card red"><div class="label">🔻 Bizning qarzimiz</div><div class="value" id="ks-qarzimiz" style="font-size:1.25rem">0</div><div class="sub">yetkazuvchilarga</div></div>
+    <div class="stat-card" style="border-left-color:#0ea5e9"><div class="label">💵 Dollar balansi</div><div class="value" id="ks-usd-balans" style="font-size:1.25rem;color:#0ea5e9">$0.00</div><div class="sub">USD naqt</div></div>
   </div>
 
   <!-- Oborot hisobi -->
@@ -3720,6 +3737,39 @@
       <table>
         <thead><tr><th>Sana</th><th>Tur</th><th>Tavsif</th><th>To'lov turi</th><th style="text-align:right">Summa</th></tr></thead>
         <tbody id="kassa-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Dollar Kassa -->
+  <div class="card" style="margin-top:18px">
+    <h2 style="margin:0 0 14px"><sn>H35d</sn>💵 Dollar kassa (USD)</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:#f0fbff;border:1.5px solid #bae6fd;border-radius:12px;padding:14px">
+        <div style="font-weight:700;color:#0ea5e9;margin-bottom:10px;font-size:0.92rem">⬆️ Dollar kirim</div>
+        <div style="display:grid;gap:7px">
+          <input type="date" id="usd-in-date" class="form-control" style="font-size:0.86rem">
+          <input type="text" id="usd-in-desc" class="form-control" placeholder="Tavsif / sabab" style="font-size:0.86rem">
+          <input type="text" id="usd-in-party" class="form-control" placeholder="Kimdan" style="font-size:0.86rem">
+          <input type="number" id="usd-in-amount" class="form-control" placeholder="Summa ($)" step="0.01" min="0" style="font-size:0.86rem">
+          <button class="btn" onclick="addKassaUsd('kirim')" style="background:#0ea5e9;color:#fff;border-color:#0ea5e9;font-weight:700">⬆️ Kirim saqlash</button>
+        </div>
+      </div>
+      <div style="background:#fff8f8;border:1.5px solid #fecaca;border-radius:12px;padding:14px">
+        <div style="font-weight:700;color:#e74c3c;margin-bottom:10px;font-size:0.92rem">⬇️ Dollar chiqim</div>
+        <div style="display:grid;gap:7px">
+          <input type="date" id="usd-out-date" class="form-control" style="font-size:0.86rem">
+          <input type="text" id="usd-out-desc" class="form-control" placeholder="Tavsif / sabab" style="font-size:0.86rem">
+          <input type="text" id="usd-out-party" class="form-control" placeholder="Kimga" style="font-size:0.86rem">
+          <input type="number" id="usd-out-amount" class="form-control" placeholder="Summa ($)" step="0.01" min="0" style="font-size:0.86rem">
+          <button class="btn" onclick="addKassaUsd('chiqim')" style="background:#e74c3c;color:#fff;border-color:#e74c3c;font-weight:700">⬇️ Chiqim saqlash</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sana</th><th>Tur</th><th>Tavsif</th><th>Kim</th><th style="text-align:right">Summa</th><th></th></tr></thead>
+        <tbody id="kassa-usd-table"></tbody>
       </table>
     </div>
   </div>
@@ -9876,7 +9926,6 @@ function approveOqRequest(reqId) {
   var req = oqRequests.find(function(r){ return r.id === reqId; });
   if (!req) return;
 
-  // Inputlardan yangilangan qiymatlarni o'qish
   var kgInp    = document.getElementById('oqreq-kg-'    + reqId);
   var donaInp  = document.getElementById('oqreq-dona-'  + reqId);
   var priceInp = document.getElementById('oqreq-price-' + reqId);
@@ -9902,65 +9951,139 @@ function approveOqRequest(reqId) {
 
   var perKg = kg > 0 ? Math.round(total / kg) : 0;
   var today = new Date().toLocaleDateString('uz-UZ');
-
-  // Buyurtmadan o'lcham (razmer) olib qo'yamiz — jadvalda razmer ko'rinishi uchun
+  var todayISO = new Date().toISOString().slice(0,10);
   var ord = (typeof orders !== 'undefined' && req.orderId != null) ? orders.find(function(x){ return x.id === req.orderId; }) : null;
   var ofw = ord ? (parseInt(ord.fw) || 0) : 0;
   var ofh = ord ? (parseInt(ord.fh) || 0) : 0;
   var ogr = ord ? (parseFloat(ord.gramaj) || 0) : 0;
   var sizeStr = (ofw && ofh) ? (ofw + '×' + ofh + ' sm') : ('So\'rovdan #' + req.orderNum);
 
+  _oqPending = { reqId:reqId, req:req, kg:kg, dona:dona, total:total, firma:firma, perKg:perKg, today:today, todayISO:todayISO, sizeStr:sizeStr, ofw:ofw, ofh:ofh, ogr:ogr };
+  showOqPayModal();
+}
+
+var _oqPending = null;
+
+function showOqPayModal() {
+  var d = _oqPending;
+  var old = document.getElementById('oq-pay-modal'); if (old) old.remove();
+  var ov = document.createElement('div');
+  ov.id = 'oq-pay-modal';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:18px;padding:24px;max-width:400px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4)">'
+    +'<div style="font-size:1.05rem;font-weight:800;color:#0A1D3F;margin-bottom:6px">💰 To\'lov holati</div>'
+    +'<div style="font-size:0.84rem;color:#888;margin-bottom:16px">'+esc(d.firma)+' · Jami: <b style="color:#1a3c5e">'+spaceFmt(d.total)+' so\'m</b></div>'
+    +'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;background:#f8f9fb;border:1.5px solid #dce3ea;border-radius:10px;margin-bottom:14px;font-weight:700;font-size:0.94rem">'
+    +'<input type="checkbox" id="oqpay-made" style="width:18px;height:18px;cursor:pointer" onchange="oqPayToggle()"> To\'lov qilindi</label>'
+    +'<div id="oqpay-details" style="display:none;margin-bottom:14px">'
+    +'<div style="margin-bottom:10px"><label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px">To\'lov summasi (so\'m)</label>'
+    +'<input type="number" id="oqpay-amount" value="'+d.total+'" min="0" style="width:100%;padding:9px 11px;border:1.5px solid #dce3ea;border-radius:8px;font-size:0.9rem;box-sizing:border-box" oninput="oqPayCheck()"></div>'
+    +'<div id="oqpay-partial" style="font-size:0.8rem;color:#e07000;margin-bottom:10px;padding:7px 10px;background:#fff8e6;border-radius:8px;display:none">⚠️ Qisman to\'lov — qoldiq qarz yetkazuvchi qarzi sifatida qoladi</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +'<label id="oqpay-naqt-lbl" style="display:flex;align-items:center;gap:7px;padding:10px;border:2px solid #1a8a50;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.88rem;background:#f8fff8">'
+    +'<input type="radio" name="oqpay-pt" value="naqt" checked onchange="oqPayPtChange()"> 💵 Naqt</label>'
+    +'<label id="oqpay-perech-lbl" style="display:flex;align-items:center;gap:7px;padding:10px;border:2px solid #dce3ea;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.88rem">'
+    +'<input type="radio" name="oqpay-pt" value="perech" onchange="oqPayPtChange()"> 🏦 Perechisleniye</label>'
+    +'</div></div>'
+    +'<div style="display:flex;gap:10px;margin-top:4px">'
+    +'<button onclick="finalizeOqApprove()" style="flex:1;padding:11px;background:#1a8a50;color:#fff;border:none;border-radius:9px;font-weight:700;font-size:0.92rem;cursor:pointer">✅ Omborga qabul qilish</button>'
+    +'<button onclick="document.getElementById(\'oq-pay-modal\').remove()" style="padding:11px 16px;background:#f0f4f8;color:#555;border:none;border-radius:9px;font-weight:700;font-size:0.9rem;cursor:pointer">✖ Bekor</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+}
+
+function oqPayToggle() {
+  var made = document.getElementById('oqpay-made').checked;
+  document.getElementById('oqpay-details').style.display = made ? '' : 'none';
+}
+
+function oqPayCheck() {
+  var d = _oqPending; if (!d) return;
+  var amt = parseFloat(document.getElementById('oqpay-amount').value) || 0;
+  document.getElementById('oqpay-partial').style.display = (amt > 0 && amt < d.total) ? '' : 'none';
+}
+
+function oqPayPtChange() {
+  var pt = document.querySelector('input[name="oqpay-pt"]:checked');
+  if (!pt) return;
+  var nl = document.getElementById('oqpay-naqt-lbl'), pl = document.getElementById('oqpay-perech-lbl');
+  if (nl) { nl.style.borderColor = pt.value === 'naqt' ? '#1a8a50' : '#dce3ea'; nl.style.background = pt.value === 'naqt' ? '#f8fff8' : '#fff'; }
+  if (pl) { pl.style.borderColor = pt.value === 'perech' ? '#1457c4' : '#dce3ea'; pl.style.background = pt.value === 'perech' ? '#f0f5ff' : '#fff'; }
+}
+
+function finalizeOqApprove() {
+  var d = _oqPending; if (!d) return;
+  var req = d.req, reqId = d.reqId;
+  var kg = d.kg, dona = d.dona, total = d.total, firma = d.firma;
+  var perKg = d.perKg, today = d.today, todayISO = d.todayISO, sizeStr = d.sizeStr;
+
+  var payMadeEl = document.getElementById('oqpay-made');
+  var payMade = payMadeEl && payMadeEl.checked;
+  var payAmount = 0;
+  var payType = 'naqt';
+  if (payMade) {
+    var payAmtEl = document.getElementById('oqpay-amount');
+    payAmount = parseFloat((payAmtEl ? payAmtEl.value : '') || 0) || 0;
+    if (!payAmount || payAmount <= 0) { showAlert('To\'lov summasini kiriting!', 'warning'); return; }
+    var ptEl = document.querySelector('input[name="oqpay-pt"]:checked');
+    payType = ptEl ? ptEl.value : 'naqt';
+  }
+
+  var ts = Date.now();
+  // 1. Omborga qo'shish
   oqKesilgan.unshift({
-    id: Date.now(),
-    orderId: req.orderId,
-    orderNum: req.orderNum,
-    date: today,
-    supplier: firma,
-    fayl: 'Buyurtma #' + req.orderNum,
-    format: sizeStr,
+    id: ts, orderId: req.orderId, orderNum: req.orderNum, date: today, supplier: firma,
+    fayl: 'Buyurtma #' + req.orderNum, format: sizeStr,
     origin: req.client + (req.orderName ? ' — ' + req.orderName : ''),
     label: sizeStr + ' · Buyurtma #' + req.orderNum + ' (' + req.client + (req.orderName ? ' — ' + req.orderName : '') + ')',
-    gramm: ogr, width: ofw, height: ofh,
+    gramm: d.ogr, width: d.ofw, height: d.ofh,
     qty: dona || 1, remaining: dona || 1,
-    totalSum: total, perKg: perKg,
-    calcKg: kg, calcKgRemaining: kg,
-    status: 'mavjud'
+    totalSum: total, perKg: perKg, calcKg: kg, calcKgRemaining: kg, status: 'mavjud'
   });
-
+  // 2. Prixod tarixi
   arrivals.unshift({
-    id: Date.now() + 1,
-    date: today,
-    supplier: firma,
-    fayl: 'Buyurtma #' + req.orderNum,
-    matType: 'oq-kesilgan',
-    matLabel: 'Oq qog\'oz (kesilgan)',
-    count: 1,
-    totalQty: kg,
+    id: ts+1, date: today, supplier: firma, fayl: 'Buyurtma #' + req.orderNum,
+    matType: 'oq-kesilgan', matLabel: 'Oq qog\'oz (kesilgan)', count: 1, totalQty: kg,
     note: req.client + ' uchun' + (perKg ? ' · ' + perKg.toLocaleString() + ' so\'m/kg' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m'
   });
-
+  // 3. Yetkazuvchi qarzi (qarz)
+  var qarzNote = 'Oq qog\'oz · Buyurtma #' + req.orderNum + ' · ' + req.client + (req.orderName ? ' — ' + req.orderName : '');
   yetqarzlar.unshift({
-    id: Date.now() + 3,
-    date: today,
-    supplier: firma,
-    type: 'qarz',
-    matType: "Oq qog'oz (kesilgan)",
-    amount: total,
-    kg: kg,
-    perKg: perKg,
-    detail: 'Buyurtma #' + req.orderNum + ' · ' + req.client,
-    note: 'Oq qog\'oz · Buyurtma #' + req.orderNum + ' · ' + req.client + (req.orderName ? ' — ' + req.orderName : '')
+    id: ts+2, date: today, supplier: firma, type: 'qarz',
+    matType: "Oq qog'oz (kesilgan)", amount: total, kg: kg, perKg: perKg,
+    detail: 'Buyurtma #' + req.orderNum + ' · ' + req.client, note: qarzNote
   });
+  // 4. Agar to'lov qilingan bo'lsa
+  if (payMade && payAmount > 0) {
+    var payNote = qarzNote + ' · Qabul qilishda to\'landi';
+    // Yetkazuvchi qarziga to'lov
+    yetqarzlar.unshift({
+      id: ts+3, date: today, supplier: firma, type: 'tolov',
+      matType: "Oq qog'oz (kesilgan)", amount: payAmount,
+      detail: 'Buyurtma #' + req.orderNum + ' · ' + req.client, note: payNote
+    });
+    // Kirim-Chiqimga chiqim
+    xarajatlar.unshift({
+      id: ts+4, tip: 'chiqim', category: 'siryo',
+      catLabel: '📦 Siryo / Yetkazuvchiga to\'lov',
+      date: todayISO, name: 'Oq qog\'oz · ' + firma, supplier: firma,
+      fayl: 'Buyurtma #' + req.orderNum, amount: payAmount, payType: payType,
+      note: 'Buyurtma #' + req.orderNum + ' · ' + req.client + (req.orderName ? ' — ' + req.orderName : '') + ' uchun oq qog\'oz qabul qilishda to\'landi'
+    });
+    saveXarajat();
+  }
   saveYetqarz();
 
   var req2 = oqRequests.find(function(r){ return r.id === reqId; });
   if (req2) { req2.status = 'approved'; req2.approvedAt = today; req2.approvedKg = kg; req2.approvedDona = dona; req2.approvedTotal = total; req2.approvedFirma = firma; req2.approvedPerKg = perKg; }
-  saveOqRequests();
-  saveW();
-  updateOqReqBadge();
-  renderOqRequests();
-  renderPrixodInlineHistory();
-  showAlert('✅ Omborga qabul qilindi! ' + kg + ' kg' + (dona ? ' · ' + dona.toLocaleString() + ' varaq' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m', 'success');
+  saveOqRequests(); saveW(); updateOqReqBadge(); renderOqRequests(); renderPrixodInlineHistory();
+
+  var modal = document.getElementById('oq-pay-modal'); if (modal) modal.remove();
+  _oqPending = null;
+
+  var payMsg = payMade ? (' · ' + spaceFmt(payAmount) + ' so\'m to\'landi (' + (payType === 'perech' ? '🏦 Perechisleniye' : '💵 Naqt') + ')') : ' · To\'lov amalga oshirilmadi (qarz qoldi)';
+  showAlert('✅ Omborga qabul qilindi! ' + kg + ' kg' + (dona ? ' · ' + dona.toLocaleString() + ' varaq' : '') + ' · Jami: ' + spaceFmt(total) + ' so\'m' + payMsg, 'success');
 }
 
 function rejectOqRequest(reqId) {
@@ -10189,7 +10312,7 @@ function renderOqRequests() {
 }
 
 function renderWarehouse() {
-  showWTab('oqreq');
+  showWTab('prixod');
   updateXizmatBadge();
   updateOqReqBadge();
   updateOmborTayyorWarning();
@@ -12948,6 +13071,42 @@ function addKassaChiqim() {
 }
 function deleteKassa(id){if(!confirm("O'chirilsinmi?"))return;kassaLog=kassaLog.filter(function(x){return x.id!==id;});saveKassa();renderKassa();}
 
+// ===== DOLLAR KASSA =====
+var kassaUsdLog = JSON.parse(localStorage.getItem('karo_kassa_usd') || '[]');
+function saveKassaUsd(){ localStorage.setItem('karo_kassa_usd', JSON.stringify(kassaUsdLog)); }
+function addKassaUsd(tip){
+  var pfx = tip==='kirim' ? 'usd-in' : 'usd-out';
+  var desc = (document.getElementById(pfx+'-desc').value||'').trim();
+  var amount = parseFloat(document.getElementById(pfx+'-amount').value)||0;
+  if(!desc){ showAlert('Tavsif kiriting!','warning'); return; }
+  if(!amount){ showAlert('Summani kiriting!','warning'); return; }
+  kassaUsdLog.unshift({ id:Date.now(), tip,
+    date: document.getElementById(pfx+'-date').value || new Date().toISOString().slice(0,10),
+    desc, party:(document.getElementById(pfx+'-party').value||'').trim(), amount });
+  saveKassaUsd();
+  [pfx+'-desc',pfx+'-party',pfx+'-amount'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  renderKassaUsd();
+  showAlert((tip==='kirim'?'⬆️ Dollar kirim':'⬇️ Dollar chiqim')+' saqlandi!','success');
+}
+function deleteKassaUsd(id){ if(!confirm("O'chirilsinmi?"))return; kassaUsdLog=kassaUsdLog.filter(function(x){return x.id!==id;}); saveKassaUsd(); renderKassaUsd(); }
+function renderKassaUsd(){
+  var balans = kassaUsdLog.reduce(function(s,x){ return s+(x.tip==='kirim'?1:-1)*(x.amount||0); },0);
+  var el=document.getElementById('ks-usd-balans'); if(el) el.textContent='$'+balans.toFixed(2);
+  var tb=document.getElementById('kassa-usd-table'); if(!tb) return;
+  if(!kassaUsdLog.length){ tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:#bbb">Dollar harakati yo\'q</td></tr>'; return; }
+  tb.innerHTML=kassaUsdLog.map(function(x){
+    var isIn=x.tip==='kirim';
+    return '<tr style="background:'+(isIn?'#f0fbff':'#fffaf8')+'">'
+      +'<td style="white-space:nowrap;color:#777;font-size:0.84rem">'+(x.date||'—')+'</td>'
+      +'<td><span style="background:'+(isIn?'#e0f7ff':'#fdf0ed')+';color:'+(isIn?'#0ea5e9':'#c0392b')+';border-radius:7px;padding:2px 9px;font-size:0.76rem;font-weight:700">'+(isIn?'⬆️ Kirim':'⬇️ Chiqim')+'</span></td>'
+      +'<td>'+(x.desc||'—')+'</td>'
+      +'<td style="font-size:0.86rem;color:#888">'+(x.party||'—')+'</td>'
+      +'<td style="white-space:nowrap;text-align:right"><b style="color:'+(isIn?'#0ea5e9':'#c0392b')+'">'+(isIn?'+ ':'− ')+'$'+(x.amount||0).toFixed(2)+'</b></td>'
+      +'<td><button onclick="deleteKassaUsd('+x.id+')" style="background:none;border:none;cursor:pointer;color:#e74c3c;padding:2px 6px">🗑</button></td>'
+    +'</tr>';
+  }).join('');
+}
+
 // Kassa moliyaviy hisobi — barcha qiymatlarni hisoblaydi
 // 🧮 [HISOB/MOLIYA] Kassa balansi va oborotni hisoblaydi: naqt/perech, ombor xom ashyo,
 //          qarzdorlik, tayyor mahsulot, bizning qarzimiz. FORMULA — o'zgartirilmaydi.
@@ -13029,6 +13188,13 @@ function computeAssets() {
   return { cash: cash, finished: finished, yarimTayyor: yarimTayyor, inProd: yarimTayyor, total: cash + finished + yarimTayyor };
 }
 
+function xrPayTypeLabel(pt) {
+  if (pt === 'perech')     return '🏦 Perechisleniye';
+  if (pt === 'balans')     return '💰 Balansdagi pul';
+  if (pt === 'predoplata') return '🟢 Oldindan to\'lov';
+  return '💵 Naqt (so\'m / $)';
+}
+
 function renderKassa() {
   var b = computeBalans();
   var setEl = function(id, v){ var e = document.getElementById(id); if (e) e.textContent = spaceFmt(v); };
@@ -13100,7 +13266,7 @@ function renderKassa() {
   }
   tb.innerHTML = list.map(function(x){
     var isIn = x.tip === 'kirim';
-    var pt = (x.payType === 'perech') ? '🏦 Perechisleniye' : '💵 Naqt';
+    var pt = xrPayTypeLabel(x.payType);
     return '<tr style="background:' + (isIn ? '#f8fff8' : '#fffaf8') + '">'
       + '<td style="white-space:nowrap;color:#777;font-size:0.84rem">' + (x.date || '—') + '</td>'
       + '<td><span style="background:' + (isIn ? '#eafaf1' : '#fdf0ed') + ';color:' + (isIn ? '#1a8a50' : '#c0392b') + ';border-radius:7px;padding:2px 9px;font-size:0.76rem;font-weight:700">' + (isIn ? '⬆️ Kirim' : '⬇️ Chiqim') + '</span></td>'
@@ -13109,6 +13275,7 @@ function renderKassa() {
       + '<td style="white-space:nowrap;text-align:right"><b style="color:' + (isIn ? '#1a8a50' : '#c0392b') + '">' + (isIn ? '+ ' : '− ') + spaceFmt(x.amount || 0) + " so'm</b></td>"
     + '</tr>';
   }).join('');
+  renderKassaUsd();
 }
 
 // ===== ISHCHILAR OYLIGI =====
@@ -13327,6 +13494,32 @@ function xrInQarzdorChanged(){
     if(supWrap) supWrap.style.display='none';
   }
 }
+function xrInCurrencyChanged(){
+  var cur=(document.getElementById('xr-in-currency')||{}).value||'uzs';
+  var kursWrap=document.getElementById('xr-in-kurs-wrap');
+  var amtLabel=document.getElementById('xr-in-amount-label');
+  if(cur==='usd'){
+    if(kursWrap) kursWrap.style.display='';
+    if(amtLabel) amtLabel.textContent='Summa ($)';
+  } else {
+    if(kursWrap) kursWrap.style.display='none';
+    if(amtLabel) amtLabel.textContent="Summa (so'm)";
+  }
+  xrUpdateKursResult();
+}
+function xrUpdateKursResult(){
+  var cur=(document.getElementById('xr-in-currency')||{}).value||'uzs';
+  var result=document.getElementById('xr-in-kurs-result');
+  if(!result) return;
+  if(cur!=='usd'){ result.innerHTML=''; return; }
+  var usd=parseFloat((document.getElementById('xr-in-amount')||{}).value)||0;
+  var kurs=parseFloat((document.getElementById('xr-in-kurs')||{}).value)||0;
+  if(usd&&kurs){
+    result.innerHTML='= <b style="color:#1a6b3a">'+spaceFmt(Math.round(usd*kurs))+" so'm</b>";
+  } else {
+    result.innerHTML='';
+  }
+}
 // Qarzdor qarzidan to'lovni ayiradi (Kirim Chiqim yozuvi addXarajatKirim'da ALOHIDA yoziladi).
 // Savdoga bog'langan bo'lsa — savdo orqali (ortiqcha summa predoplata bo'ladi). Qaytadi: qarzga qo'llangan summa.
 function applyKirimToQarzdor(q, sum, payDate){
@@ -13351,8 +13544,16 @@ function applyKirimToQarzdor(q, sum, payDate){
   return applied;
 }
 function addXarajatKirim() {
-  var amount = parseFloat(document.getElementById('xr-in-amount').value)||0;
-  if (!amount) { showAlert('Summani kiriting!','warning'); return; }
+  var rawAmount = parseFloat(document.getElementById('xr-in-amount').value)||0;
+  if (!rawAmount) { showAlert('Summani kiriting!','warning'); return; }
+  var currency = (document.getElementById('xr-in-currency')||{}).value || 'uzs';
+  var kurs = 0, usdAmount = 0, amount = rawAmount;
+  if (currency === 'usd') {
+    kurs = parseFloat((document.getElementById('xr-in-kurs')||{}).value)||0;
+    if (!kurs) { showAlert("Dollar kursini kiriting (1 $ = ? so'm)!", 'warning'); return; }
+    usdAmount = rawAmount;
+    amount = Math.round(rawAmount * kurs);
+  }
   var cat = document.getElementById('xr-in-cat').value || 'kirim-boshqa';
   var note = (document.getElementById('xr-in-note').value||'').trim();
   var date = document.getElementById('xr-in-date').value || new Date().toISOString().slice(0,10);
@@ -13395,14 +13596,22 @@ function addXarajatKirim() {
     supplier: supplier,
     fayl:'',
     payType: (document.getElementById('xr-in-paytype')||{}).value || 'naqt',
+    currency: currency,
+    usdAmount: currency==='usd' ? usdAmount : undefined,
+    kurs: currency==='usd' ? kurs : undefined,
     amount, note: (note || (qName ? "Qarzdorlar ro'yxatidan" : '')) });
   saveXarajat();
-  ['xr-in-supplier','xr-in-amount','xr-in-note'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  ['xr-in-supplier','xr-in-amount','xr-in-note','xr-in-kurs'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   var qd=document.getElementById('xr-in-qarzdor'); if(qd) qd.selectedIndex=0;
+  var cd=document.getElementById('xr-in-currency'); if(cd) cd.value='uzs';
+  xrInCurrencyChanged();
   xrInCatChanged();
   renderXarajatlar();
   if (qApplied>0 && typeof renderQarzdorlar==='function') renderQarzdorlar();
-  showAlert(qApplied>0 ? ("⬆️ Kirim saqlandi — "+spaceFmt(qApplied)+" so'm "+qName+" qarzidan ayirildi!") : '⬆️ Kirim saqlandi!','success');
+  var savedMsg = currency==='usd'
+    ? ("⬆️ Kirim saqlandi! $"+usdAmount+" × "+spaceFmt(kurs)+" = "+spaceFmt(amount)+" so'm")
+    : (qApplied>0 ? ("⬆️ Kirim saqlandi — "+spaceFmt(qApplied)+" so'm "+qName+" qarzidan ayirildi!") : '⬆️ Kirim saqlandi!');
+  showAlert(savedMsg,'success');
 }
 var chiqimMode = 'kat';
 function setChiqimMode(mode) {
@@ -13916,7 +14125,7 @@ function renderXarajatlar() {
   var tbody = document.getElementById('xarajatlar-table');
   if (!tbody) return;
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="text-muted" style="text-align:center;padding:20px">Yozuvlar yo\'q</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-muted" style="text-align:center;padding:20px">Yozuvlar yo\'q</td></tr>';
     return;
   }
   tbody.innerHTML = list.map(function(x, i) {
@@ -13924,6 +14133,7 @@ function renderXarajatlar() {
     var tipBadge = isKirim
       ? '<span style="background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;white-space:nowrap">⬆️ Kirim</span>'
       : '<span style="background:#fdf0ed;color:#c0392b;border:1px solid #f1aaa0;border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;white-space:nowrap">⬇️ Chiqim</span>';
+    var ptLabel = xrPayTypeLabel(x.payType);
     return '<tr style="background:' + (isKirim?'#f8fff8':'#fffaf8') + '">' +
       '<td>' + (i+1) + '</td>' +
       '<td style="white-space:nowrap;font-size:0.85rem">' + (x.date||'—') + '</td>' +
@@ -13931,8 +14141,9 @@ function renderXarajatlar() {
       '<td style="white-space:nowrap;font-size:0.82rem">' + (x.catLabel ? tgEsc(x.catLabel) : (x.category ? tgEsc(x.category) : '—')) + '</td>' +
       '<td><b>' + (x.name ? tgEsc(x.name) : '—') + '</b></td>' +
       '<td style="font-size:0.85rem">' + (x.supplier ? tgEsc(x.supplier) : '—') + '</td>' +
+      '<td style="font-size:0.82rem;white-space:nowrap">' + ptLabel + '</td>' +
       '<td style="font-size:0.82rem">' + (x.fayl ? tgEsc(x.fayl) : '—') + '</td>' +
-      '<td style="white-space:nowrap"><b style="color:' + (isKirim?'#1a8a50':'#e74c3c') + '">' + (isKirim?'+':'-') + (x.amount||0).toLocaleString('uz-UZ') + ' so\'m</b></td>' +
+      '<td style="white-space:nowrap"><b style="color:' + (isKirim?'#1a8a50':'#e74c3c') + '">' + (isKirim?'+':'-') + (x.amount||0).toLocaleString('uz-UZ') + ' so\'m</b>' + (x.currency==='usd'&&x.usdAmount ? '<br><span style="font-size:0.74rem;color:#888">$'+x.usdAmount+' × '+spaceFmt(x.kurs||0)+'</span>' : '') + '</td>' +
       '<td style="font-size:0.82rem">' + (x.note ? tgEsc(x.note) : '—') + '</td>' +
       '<td><button class="btn btn-danger btn-sm" onclick="deleteXarajat(' + x.id + ')">🗑</button></td>' +
     '</tr>';
@@ -18685,7 +18896,9 @@ updateProdBadge();
       showNoAccess(u);   // hech qanday bo'lim ruxsati yo'q — toza "ruxsat yo'q" ekrani
     } else {
       removeNoAccess();
-      if(!activeId || !canAccess(activeId)){
+      var _savedPg=null; try{ _savedPg=sessionStorage.getItem('karo_reload_page'); sessionStorage.removeItem('karo_reload_page'); }catch(e){}
+      if(_savedPg && canAccess(_savedPg)){ var _savedBtn=navButtonFor(_savedPg); if(window.showPage) window.showPage(_savedPg, _savedBtn); }
+      else if(!activeId || !canAccess(activeId)){
         if(f0){ var b = navButtonFor(f0); if(window.showPage) window.showPage(f0, b); }
       }
     }
@@ -19220,7 +19433,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.27';
+  var APP_VERSION = '1.29';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
@@ -19263,7 +19476,7 @@ updateProdBadge();
       'karo_orders':'Buyurtmalar','karo_deleted_orders':"O'chirilgan buyurtmalar",'karo_prodOrders':'Ishlab chiqarish zakazlari','karo_productions':'Ishlab chiqarish tarixi',
       'karo_tayyor':'Tayyor mahsulotlar','karo_gofra':'Gofra rulonlari','karo_oqrulon':"Oq qog'oz (rulon)",'karo_oqkesilgan':"Oq qog'oz (kesilgan)",
       'karo_boshqa':'Kley / xizmatlar','karo_arrivals':'Prixodlar','karo_rasxod':'Rasxod jurnali','karo_yetqarzlar':'Yetkazuvchi qarzi','karo_qarzdorlar':'Qarzdorlar',
-      'karo_kassa':'Kassa','karo_xarajatlar':'Kirim-chiqim','karo_savdo':'Savdo','karo_ishchilar':'Ishchilar','karo_oyliklar':'Oyliklar','karo_planned_expenses':'Rejalashtirilgan xarajatlar',
+      'karo_kassa':'Kassa','karo_kassa_usd':'Dollar kassa','karo_xarajatlar':'Kirim-chiqim','karo_savdo':'Savdo','karo_ishchilar':'Ishchilar','karo_oyliklar':'Oyliklar','karo_planned_expenses':'Rejalashtirilgan xarajatlar',
       'karo_makulatura':'Makulatura','karo_mak_stock':'Makulatura ombori','karo_mak_shipments':'Makulatura jo\'natma','karo_sozlamalar':'Narx sozlamalari','karo_fin':'Moliyaviy kartalar',
       'karo_oq_requests':"Oq qog'oz so'rovlari",'karo_gofra_requests':"Gofra so'rovlari",'karo_narx_tuzatish':'Narx tuzatish','karo_kley_rasxod':'Kley rasxod','karo_prod_workers':'Ishchi nomlari'
     };
