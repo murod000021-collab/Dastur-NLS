@@ -170,7 +170,7 @@
             var changed=false;
             if(p.eventType==='DELETE'){ var ok=p.old; if(ok&&ok.k) changed=applyRemote(ok.k, null, true); }
             else { var nw=p.new; if(nw&&nw.k) changed=applyRemote(nw.k, nw.v, false); }
-            if(changed){ clearTimeout(rerenderTimer); rerenderTimer=setTimeout(function(){ var _pg=activePageId(); try{ if(_pg) sessionStorage.setItem('karo_reload_page',_pg); }catch(e){} location.reload(); },700); }
+            if(changed){ showSyncNotice(); }
           }catch(e){}
         })
         .subscribe(function(status){
@@ -187,6 +187,21 @@
     var c=document.getElementById('cloud-chip'); if(!c) return;
     c.style.background='#e7f0ff'; c.style.color='#1457c4'; c.style.borderColor='#aecbf5'; c.textContent='☁️ Yangilandi';
     clearTimeout(c._t); c._t=setTimeout(function(){ chipRest(); },1600);
+  }
+  function showSyncNotice(){
+    var el=document.getElementById('sync-notice');
+    if(el){ el.style.display='flex'; return; }
+    el=document.createElement('div'); el.id='sync-notice';
+    el.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999999;background:linear-gradient(90deg,#1457c4,#2e86f0);color:#fff;padding:11px 18px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:Segoe UI,sans-serif;font-size:0.9rem;font-weight:700;box-shadow:0 3px 14px rgba(0,0,0,0.22);animation:syncSlideDown .35s ease';
+    el.innerHTML='<span style="font-size:1.1rem">🔄</span><span>Yangi ma\'lumot bor — sahifani yangilang</span>'
+      +'<button onclick="location.reload()" style="padding:7px 18px;border:none;border-radius:8px;background:#fff;color:#1457c4;font-weight:800;cursor:pointer;font-size:0.88rem;box-shadow:0 1px 4px rgba(0,0,0,0.15)">Yangilash</button>'
+      +'<button onclick="document.getElementById(\'sync-notice\').style.display=\'none\'" style="padding:5px 11px;border:none;border-radius:8px;background:rgba(255,255,255,0.18);color:#fff;cursor:pointer;font-size:1rem;line-height:1">✕</button>';
+    document.body.appendChild(el);
+    if(!document.getElementById('sync-notice-style')){
+      var s=document.createElement('style'); s.id='sync-notice-style';
+      s.textContent='@keyframes syncSlideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}';
+      document.head.appendChild(s);
+    }
   }
 
   function showLogin(){
