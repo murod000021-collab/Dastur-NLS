@@ -18083,11 +18083,15 @@ updateProdBadge();
   };
   INV.closeWeight=function(){ var m=$('inv-weight-modal'); if(m) m.classList.remove('open'); INV._weighId=null; };
   INV.toggleWeightPay=function(){ var w=$('inv-w-paytype-wrap'); if(w) w.style.display = ($('inv-w-paystatus').value==='paid')?'':'none'; };
-  INV.calcWeight=function(){ var w=+$('inv-w-weight').value||0, p=+$('inv-w-price').value||0, t=Math.round(w*p);
+  INV.calcWeight=function(){
+    var w=parseFloat(($('inv-w-weight').value||'').replace(/[^\d.]/g,''))||0;
+    var p=parseFloat(($('inv-w-price').value||'').replace(/[^\d.]/g,''))||0;
+    var t=Math.round(w*p);
     var el=$('inv-w-total'); if(el) el.textContent='= '+money(t)+" so'm   ("+num(w)+' kg × '+money(p)+')'; };
   INV.saveWeight=function(){
     var sh=findShip(INV._weighId); if(!sh){ INV.closeWeight(); return; }
-    var w=+$('inv-w-weight').value||0, p=+$('inv-w-price').value||0;
+    var w=parseFloat(($('inv-w-weight').value||'').replace(/[^\d.]/g,''))||0;
+    var p=parseFloat(($('inv-w-price').value||'').replace(/[^\d.]/g,''))||0;
     if(w<=0||p<=0){ toast('Vazn va 1 kg narxni kiriting','warning'); return; }
     sh.weight=w; sh.pricePerKg=p; sh.total=Math.round(w*p); sh.status='completed';
     var ps=$('inv-w-paystatus').value; sh.payStatus=ps;
