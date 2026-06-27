@@ -65,7 +65,7 @@
   var SUPA_URL='https://yuhhdgjtynulzrbqvkqg.supabase.co';
   var SUPA_KEY='sb_publishable_k3cv4iXrqWFv0HLD1DPkQg_XexqCiQ5';
   var WS='nls', SYNC_RE=/^karo_/, FLAG='karoCloudSession', PENDING='karo_cloud_pending', SEEDED='__meta_seeded';
-  var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1, 'karo_my_token':1 };
+  var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1, 'karo_my_token':1, 'karo_pin':1 };
   var _set=localStorage.setItem.bind(localStorage), _get=localStorage.getItem.bind(localStorage), _remove=localStorage.removeItem.bind(localStorage);
   var sb=null, ready=false, timers={};
   // ☁️ REALTIME holati
@@ -1644,19 +1644,27 @@
       <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
     </div>
     <div id="pin-err-msg" style="min-height:22px;font-size:13px;color:#ff7b7b;font-weight:700;margin-bottom:18px"></div>
-    <div style="display:grid;grid-template-columns:repeat(3,68px);gap:10px;justify-content:center;margin:0 auto">
-      <button class="pin-key" onclick="PIN.press('1')">1</button>
-      <button class="pin-key" onclick="PIN.press('2')">2</button>
-      <button class="pin-key" onclick="PIN.press('3')">3</button>
-      <button class="pin-key" onclick="PIN.press('4')">4</button>
-      <button class="pin-key" onclick="PIN.press('5')">5</button>
-      <button class="pin-key" onclick="PIN.press('6')">6</button>
-      <button class="pin-key" onclick="PIN.press('7')">7</button>
-      <button class="pin-key" onclick="PIN.press('8')">8</button>
-      <button class="pin-key" onclick="PIN.press('9')">9</button>
-      <button class="pin-key" onclick="PIN.press('del')" style="font-size:18px;color:#aac4e8">⌫</button>
-      <button class="pin-key" onclick="PIN.press('0')">0</button>
-      <button class="pin-key" onclick="PIN.press('ok')" style="background:rgba(79,150,255,0.22);border-color:rgba(79,150,255,0.55)">✓</button>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+      <div style="display:flex;gap:10px">
+        <button class="pin-key" onclick="PIN.press('1')">1</button>
+        <button class="pin-key" onclick="PIN.press('2')">2</button>
+        <button class="pin-key" onclick="PIN.press('3')">3</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="pin-key" onclick="PIN.press('4')">4</button>
+        <button class="pin-key" onclick="PIN.press('5')">5</button>
+        <button class="pin-key" onclick="PIN.press('6')">6</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="pin-key" onclick="PIN.press('7')">7</button>
+        <button class="pin-key" onclick="PIN.press('8')">8</button>
+        <button class="pin-key" onclick="PIN.press('9')">9</button>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="pin-key" onclick="PIN.press('del')" style="font-size:18px;color:#aac4e8">⌫</button>
+        <button class="pin-key" onclick="PIN.press('0')">0</button>
+        <button class="pin-key" onclick="PIN.press('ok')" style="background:rgba(79,150,255,0.22);border-color:rgba(79,150,255,0.55)">✓</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2366,14 +2374,14 @@
       <!-- 3. Sloy turi -->
       <div class="form-group">
         <label style="font-weight:700;color:#1a3c5e">3. Gofra turi</label>
-        <div style="display:flex;gap:8px;margin-top:4px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-3sloy">
+        <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-3sloy">
             <input type="radio" name="o-sloy" value="3" id="o-sloy3" onchange="updateSloyStyle()" style="cursor:pointer"> 3 sloy
           </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-5sloy">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-5sloy">
             <input type="radio" name="o-sloy" value="5" id="o-sloy5" onchange="updateSloyStyle()" style="cursor:pointer"> 5 sloy
           </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-kartonsloy">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-kartonsloy">
             <input type="radio" name="o-sloy" value="karton" id="o-sloykarton" onchange="updateSloyStyle()" style="cursor:pointer"> Karton
           </label>
         </div>
@@ -2434,11 +2442,11 @@
           <!-- 10. Micro / Macro -->
           <div class="form-group" id="form-group-profil" style="margin:0">
             <label style="font-weight:700;color:#1a3c5e">10. Gofra profili</label>
-            <div style="display:flex;gap:8px;margin-top:4px">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-micro">
+            <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-micro">
                 <input type="radio" name="o-profil" value="micro" id="o-micro" onchange="updateProfilStyle()" checked="" style="cursor:pointer"> Micro
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-macro">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-macro">
                 <input type="radio" name="o-profil" value="macro" id="o-macro" onchange="updateProfilStyle()" style="cursor:pointer"> Macro
               </label>
             </div>
@@ -2454,10 +2462,10 @@
           <div class="form-group" id="form-group-tag" style="margin:0">
             <label style="font-weight:700;color:#1a3c5e">11. Tag qismi</label>
             <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-oq">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-oq">
                 <input type="radio" name="o-tag" value="oq" id="o-tag-oq" onchange="updateTagStyle()" style="cursor:pointer"> ⬜ Oq
               </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:0.9rem;transition:all 0.15s" id="lbl-jigar">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 12px;border:2px solid #dce3ea;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;transition:all 0.15s" id="lbl-jigar">
                 <input type="radio" name="o-tag" value="jigarrang" id="o-tag-jigar" onchange="updateTagStyle()" checked="" style="cursor:pointer"> 🟫 Jigarrang
               </label>
               <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
