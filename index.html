@@ -1633,7 +1633,6 @@
       <div id="d-motiv-quote" style="font-size:1.15rem;font-weight:800;line-height:1.5;max-width:700px">Bugungi kun — yangi imkoniyat. Ishni shiddat bilan boshlaymiz!</div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:5px 14px;font-size:0.8rem;font-weight:700">🚀 Shiddat bilan ishlaymiz</span>
-        <span style="background:rgba(255,255,255,0.11);border-radius:20px;padding:5px 14px;font-size:0.78rem;opacity:0.88">🏭 Karvon Food</span>
       </div>
     </div>
   </div>
@@ -4418,33 +4417,175 @@
 <!-- SOZLAMALAR -->
 <div id="page-sozlamalar" class="page">
   <main>
-    <!-- 🎨 VIZUAL EFFEKTLAR -->
-    <div class="card" style="margin-bottom:20px">
-      <h2><sn>H-FX</sn>🎨 Vizual effektlar</h2>
-      <p style="font-size:0.8rem;color:#888;margin:-6px 0 14px">Zamonaviy SaaS uslubidagi yengil orqa fon effektlari (Stripe, Linear, Notion uslubi). Har doim kontent orqasida — jadval va hisobotlarga xalaqit bermaydi. Istalgan vaqt o'chirsa bo'ladi.</p>
-      <div style="display:flex;flex-direction:column;gap:14px;max-width:540px">
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
-          <input type="checkbox" id="fx-enabled" onchange="FX.onToggle()" style="width:20px;height:20px;cursor:pointer;margin-top:2px">
-          <span><b>Fon effektlarini yoqish</b><br><span style="font-size:0.78rem;color:#8a99b3">Barcha orqa fon effektlarini yoqadi yoki butunlay o'chiradi</span></span>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
-          <input type="checkbox" id="fx-particles" onchange="FX.onToggle()" style="width:20px;height:20px;cursor:pointer;margin-top:2px">
-          <span><b>Suzuvchi zarrachalar</b><br><span style="font-size:0.78rem;color:#8a99b3">Yumshoq nurli nuqtalar — sekin suzib yuradi</span></span>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
-          <input type="checkbox" id="fx-premium" onchange="FX.onToggle()" style="width:20px;height:20px;cursor:pointer;margin-top:2px">
-          <span><b>Premium animatsiyalar</b><br><span style="font-size:0.78rem;color:#8a99b3">Sekin harakatlanuvchi abstrakt geometrik shakllar</span></span>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
-          <input type="checkbox" id="fx-butterflies" onchange="FX.onToggle()" style="width:20px;height:20px;cursor:pointer;margin-top:2px">
-          <span><b>🦋 Kapalaklar</b><br><span style="font-size:0.78rem;color:#8a99b3">Sekin uchib yuruvchi kapalaklar</span></span>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
-          <input type="checkbox" id="fx-fish" onchange="FX.onToggle()" style="width:20px;height:20px;cursor:pointer;margin-top:2px">
-          <span><b>🐟 Baliqlar</b><br><span style="font-size:0.78rem;color:#8a99b3">Suzib yuruvchi baliqlar</span></span>
-        </label>
+    <!-- 🎨 VIZUAL EFFEKTLAR — Premium Settings Panel -->
+    <div class="card" style="margin-bottom:20px;max-width:680px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:2px">
+        <div>
+          <h2 style="margin:0 0 4px"><sn>H-FX</sn>🎨 Vizual effektlar</h2>
+          <p style="font-size:.78rem;color:#8a99b3;margin:0;line-height:1.5">Professional SaaS uslubidagi UI animatsiyalari va fon effektlari. Istalgan vaqt yoqib/o'chirish mumkin.</p>
+        </div>
+        <span style="background:linear-gradient(135deg,#1457C4,#2E86F0);color:#fff;padding:3px 11px;border-radius:20px;font-size:.68rem;font-weight:800;letter-spacing:.4px;white-space:nowrap;margin-top:3px;flex-shrink:0">Premium UI</span>
       </div>
-      <p style="font-size:0.74rem;color:#9aa7b8;margin:14px 0 0">⚡ Maksimal ~26 zarracha · yengil render · 60fps · tezlikka ta'sir qilmaydi.</p>
+
+      <div class="fx-section-hd">Asosiy boshqaruv</div>
+      <label class="fx-row" style="cursor:pointer;padding:13px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Fon effektlari (canvas)</div>
+          <div class="fx-row-desc">Zarrachalar, geometrik shakllar, kapalaklar, baliqlar — har doim kontent orqasida</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-enabled" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:13px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Yengil harakat rejimi</div>
+          <div class="fx-row-desc">Animatsiyalarni minimallashtiradi — ko'z charchashiga qarshi</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-reduced" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+
+      <div class="fx-section-hd">Fon effektlari</div>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Suzuvchi zarrachalar</div>
+          <div class="fx-row-desc">Yumshoq nurli nuqtalar — sekin suzib yuradi, 60fps</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-particles" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Geometrik shakllar</div>
+          <div class="fx-row-desc">Sekin harakatlanuvchi abstrakt shakllar</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-premium" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">🦋 Kapalaklar</div>
+          <div class="fx-row-desc">Sekin uchib yuruvchi kapalaklar</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-butterflies" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">🐟 Baliqlar</div>
+          <div class="fx-row-desc">Suzib yuruvchi dengiz jonzotlari (20 xil tur)</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-fish" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+
+      <div class="fx-section-hd">UI micro-animatsiyalar</div>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Card hover effekti</div>
+          <div class="fx-row-desc">Karta ustiga kelganda yumshoq ko'tarilish va soya</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-cardhover" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Counter animatsiya</div>
+          <div class="fx-row-desc">Statistik raqamlar 0 dan smooth hisoblash effekti bilan chiqadi</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-counter" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+      <label class="fx-row" style="cursor:pointer;padding:12px 0;border-bottom:none">
+        <div class="fx-row-info">
+          <div class="fx-row-title">Toast bildirish animatsiyasi</div>
+          <div class="fx-row-desc">Xabarlar o'ng yuqoridan smooth kirib chiqadi</div>
+        </div>
+        <label class="fx-sw"><input type="checkbox" id="fx-toast" onchange="FX.onToggle()"><span class="fx-sw-track"></span></label>
+      </label>
+
+      <p style="font-size:.71rem;color:#9aa7b8;margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(220,228,244,.5);line-height:1.5">⚡ Maksimal ~26 zarracha · GPU-accelerated (transform/opacity) · 60fps · sayt tezligiga ta'sir qilmaydi</p>
+    </div>
+
+    <!-- Effektlar namoyishi -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:.72rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#7a96c4;margin-bottom:14px;display:flex;align-items:center;gap:8px">Effektlar namoyishi <span style="flex:1;height:1px;background:linear-gradient(90deg,rgba(220,232,255,.7),transparent);display:block"></span></div>
+      <div class="fx-preview-grid">
+
+        <!-- Card hover demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Card hover effekti</div>
+          <div class="fx-prev-demo-card">
+            <div style="font-size:.78rem;color:#8a99b3;margin-bottom:6px">Faol buyurtmalar</div>
+            <div style="font-size:1.5rem;font-weight:800;color:#1457C4;line-height:1">1 873</div>
+            <div style="font-size:.72rem;color:#8a99b3;margin-top:2px">ta · oxirgi 30 kun</div>
+            <div style="margin-top:10px;height:3px;background:linear-gradient(90deg,#1457C4,#2E86F0,#5BB8FF);border-radius:3px"></div>
+          </div>
+          <p style="font-size:.72rem;color:#9aa7b8;margin:8px 0 0">Yuqoridagi kartaga keling — effektni ko'ring</p>
+        </div>
+
+        <!-- Status badges demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Status badge'lar</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.8rem;color:#5e7191">Faol buyurtma</span><span class="fx-badge fx-badge-active">Faol</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.8rem;color:#5e7191">Tasdiqlash kutilmoqda</span><span class="fx-badge fx-badge-pending">Kutmoqda</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.8rem;color:#5e7191">Ishlab chiqarishda</span><span class="fx-badge fx-badge-process">Jarayonda</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.8rem;color:#5e7191">Ulangan</span><span class="fx-badge fx-badge-info">Ulangan</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:.8rem;color:#5e7191">Xato</span><span class="fx-badge fx-badge-inactive">Xato</span></div>
+          </div>
+        </div>
+
+        <!-- Skeleton loading demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Skeleton loading</div>
+          <div class="fx-skel-row">
+            <div class="fx-skel fx-skel-circle"></div>
+            <div style="flex:1"><div class="fx-skel fx-skel-line w-3q"></div><div class="fx-skel fx-skel-line w-half"></div></div>
+          </div>
+          <div class="fx-skel-row">
+            <div class="fx-skel fx-skel-circle"></div>
+            <div style="flex:1"><div class="fx-skel fx-skel-line w-full"></div><div class="fx-skel fx-skel-line w-1q"></div></div>
+          </div>
+          <div class="fx-skel-row" style="border:none">
+            <div class="fx-skel fx-skel-circle"></div>
+            <div style="flex:1"><div class="fx-skel fx-skel-line w-half"></div><div class="fx-skel fx-skel-line w-3q"></div></div>
+          </div>
+        </div>
+
+        <!-- Progress bar demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Progress bar</div>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <div>
+              <div class="fx-prog-label"><span>Bajarildi</span><span style="color:#1457C4">73%</span></div>
+              <div class="fx-prog-wrap"><div class="fx-prog-bar" style="width:73%"></div></div>
+            </div>
+            <div>
+              <div class="fx-prog-label"><span>Ombor</span><span style="color:#16a34a">45%</span></div>
+              <div class="fx-prog-wrap"><div class="fx-prog-bar" style="width:45%;background:linear-gradient(90deg,#16a34a,#22c55e,#86efac);background-size:200% 100%"></div></div>
+            </div>
+            <div>
+              <div class="fx-prog-label"><span>Sifat nazorati</span><span style="color:#7c3aed">88%</span></div>
+              <div class="fx-prog-wrap"><div class="fx-prog-bar" style="width:88%;background:linear-gradient(90deg,#7c3aed,#8b5cf6,#a78bfa);background-size:200% 100%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Button effects demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Button micro-interactions</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-primary" style="width:100%;font-size:.84rem;padding:9px 16px" onclick="FX.showToast('success','Saqlandi!','Ma\'lumotlar muvaffaqiyatli saqlandi.')">💾 Saqlash</button>
+            <button class="btn" style="width:100%;font-size:.84rem;padding:9px 16px;background:#eef3fb;color:#1a3c5e;border:1.5px solid #d3e0f2" onclick="FX.showToast('info','Bekor qilindi','Amalni bekor qildingiz.')">✕ Bekor qilish</button>
+            <button class="btn" style="width:100%;font-size:.84rem;padding:9px 16px;background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;border:none" onclick="FX.showToast('error','O\'chirildi!','Yozuv tizimdan o\'chirildi.')">🗑 O'chirish</button>
+          </div>
+        </div>
+
+        <!-- Toast demo -->
+        <div class="fx-prev-card">
+          <div class="fx-prev-title">Toast bildirish (sinab ko'ring)</div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <button class="btn" style="background:#e8f8ef;color:#1a7a3a;border:1.5px solid #c3e6d0;font-size:.8rem;padding:8px 12px;width:100%;font-weight:700;text-align:left" onclick="FX.showToast('success','Muvaffaqiyatli!','Amal bajarildi.')">✓ &nbsp;Success</button>
+            <button class="btn" style="background:#fdecea;color:#c0392b;border:1.5px solid #f5c6cb;font-size:.8rem;padding:8px 12px;width:100%;font-weight:700;text-align:left" onclick="FX.showToast('error','Xato yuz berdi','Iltimos qaytadan urinib ko\'ring.')">✕ &nbsp;Error</button>
+            <button class="btn" style="background:#fef9e8;color:#b8651a;border:1.5px solid #fde68a;font-size:.8rem;padding:8px 12px;width:100%;font-weight:700;text-align:left" onclick="FX.showToast('warning','Diqqat!','Ruxsat talab qilinadi.')">⚠ &nbsp;Warning</button>
+            <button class="btn" style="background:#eef3fb;color:#1457c4;border:1.5px solid #c2d6f2;font-size:.8rem;padding:8px 12px;width:100%;font-weight:700;text-align:left" onclick="FX.showToast('info','Eslatma','Tizim yangilandi.')">ℹ &nbsp;Info</button>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
@@ -18871,6 +19012,151 @@ updateProdBadge();
   @media print{ #fx-canvas{display:none!important} }
   @media (prefers-reduced-motion: reduce){ #fx-canvas{display:none!important} }
 </style>
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   🎨 FX PREMIUM UI SYSTEM — toggle switches · skeleton · badges ·
+      toast · progress · stagger · empty-state · counter
+      Reusable: .fx-sw · .fx-row · .fx-skel · .fx-badge · .fx-toast ·
+                .fx-prog-* · .fx-stagger · .fx-empty · .fx-prev-*
+   ════════════════════════════════════════════════════════════════════ */
+
+/* — Toggle switch (iOS-uslub) — */
+.fx-sw{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.fx-sw input{opacity:0;width:0;height:0;position:absolute;pointer-events:none}
+.fx-sw-track{position:absolute;inset:0;border-radius:34px;background:#d0dae9;transition:background .25s cubic-bezier(.22,.61,.36,1);cursor:pointer}
+.fx-sw-track::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.08);transition:transform .25s cubic-bezier(.22,.61,.36,1)}
+.fx-sw input:checked+.fx-sw-track{background:linear-gradient(135deg,#1457C4,#2E86F0)}
+.fx-sw input:checked+.fx-sw-track::before{transform:translateX(20px)}
+.fx-sw input:disabled+.fx-sw-track{opacity:.38;cursor:not-allowed}
+
+/* — Settings row — */
+.fx-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(220,228,244,.6);transition:background .18s}
+.fx-row:last-child{border-bottom:none}
+.fx-row-info{flex:1;min-width:0}
+.fx-row-title{font-size:.88rem;font-weight:700;color:#0A1D3F;line-height:1.3}
+.fx-row-desc{font-size:.75rem;color:#8a99b3;margin-top:2px;line-height:1.45}
+.fx-section-hd{font-size:.68rem;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#7a96c4;margin:18px 0 4px;display:flex;align-items:center;gap:8px}
+.fx-section-hd::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(200,218,248,.8),transparent);display:block}
+
+/* — Skeleton shimmer — */
+@keyframes fxShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.fx-skel{border-radius:6px;background:linear-gradient(90deg,#edf0f7 25%,#e2e7f3 50%,#edf0f7 75%);background-size:600px 100%;animation:fxShimmer 1.5s ease-in-out infinite}
+.fx-skel-line{height:11px;margin:5px 0}
+.fx-skel-line.w-full{width:100%}.fx-skel-line.w-3q{width:75%}.fx-skel-line.w-half{width:50%}.fx-skel-line.w-1q{width:28%}
+.fx-skel-circle{border-radius:50%;width:36px;height:36px;flex-shrink:0}
+.fx-skel-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #f0f3fa}
+.fx-skel-row:last-child{border-bottom:none}
+
+/* — Status badges — */
+.fx-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.74rem;font-weight:700;letter-spacing:.15px;line-height:1.5}
+.fx-badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.fx-badge-active{background:#e8f9ef;color:#1a7a3a}
+.fx-badge-active::before{background:#22c55e;animation:fxPulseGreen 2s ease-in-out infinite}
+.fx-badge-inactive{background:#fdecea;color:#c0392b}
+.fx-badge-inactive::before{background:#ef4444}
+.fx-badge-pending{background:#fef8e7;color:#b86309}
+.fx-badge-pending::before{background:#f59e0b;animation:fxPulseAmber 2.5s ease-in-out infinite}
+.fx-badge-info{background:#eef3fb;color:#1457c4}
+.fx-badge-info::before{background:#3b82f6}
+.fx-badge-process{background:#f4f0ff;color:#7c3aed}
+.fx-badge-process::before{background:#8b5cf6;animation:fxPulsePurple 1.9s ease-in-out infinite}
+@keyframes fxPulseGreen{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 5px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+@keyframes fxPulseAmber{0%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}70%{box-shadow:0 0 0 5px rgba(245,158,11,0)}100%{box-shadow:0 0 0 0 rgba(245,158,11,0)}}
+@keyframes fxPulsePurple{0%{box-shadow:0 0 0 0 rgba(139,92,246,.55)}70%{box-shadow:0 0 0 5px rgba(139,92,246,0)}100%{box-shadow:0 0 0 0 rgba(139,92,246,0)}}
+
+/* — Progress bar — */
+.fx-prog-wrap{background:#edf0f7;border-radius:20px;height:7px;overflow:hidden}
+.fx-prog-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,#1457C4,#2E86F0,#60a5fa);background-size:200% 100%;transition:width 1s cubic-bezier(.22,.61,.36,1);animation:fxProgFlow 2.5s linear infinite}
+@keyframes fxProgFlow{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.fx-prog-label{display:flex;justify-content:space-between;align-items:center;font-size:.74rem;font-weight:700;color:#5e7191;margin-bottom:5px}
+
+/* — Toast notification — */
+#fx-toast-root{position:fixed;top:18px;right:18px;z-index:1000020;display:flex;flex-direction:column;gap:9px;pointer-events:none}
+.fx-toast{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);pointer-events:all;min-width:270px;max-width:340px;background:#fff;border:1px solid rgba(220,230,248,.9);transform:translateX(112%);opacity:0;transition:transform .32s cubic-bezier(.22,.61,.36,1),opacity .28s ease;will-change:transform,opacity}
+.fx-toast.in{transform:translateX(0);opacity:1}
+.fx-toast.out{transform:translateX(112%);opacity:0}
+.fx-toast-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:.95rem;font-weight:800;flex-shrink:0}
+.fx-toast-success .fx-toast-icon{background:#e8f9ef;color:#1a7a3a}
+.fx-toast-error   .fx-toast-icon{background:#fdecea;color:#c0392b}
+.fx-toast-warning .fx-toast-icon{background:#fef8e7;color:#b86309}
+.fx-toast-info    .fx-toast-icon{background:#eef3fb;color:#1457c4}
+.fx-toast-body{flex:1;min-width:0}
+.fx-toast-title{font-size:.86rem;font-weight:700;color:#0A1D3F;line-height:1.3}
+.fx-toast-msg{font-size:.76rem;color:#7185a3;margin-top:2px;line-height:1.4}
+.fx-toast-close{padding:2px 5px;font-size:.85rem;color:#a0aec0;cursor:pointer;background:none;border:none;flex-shrink:0;border-radius:5px;transition:color .15s,background .15s;line-height:1;margin-top:-1px}
+.fx-toast-close:hover{color:#0A1D3F;background:#eef1f8}
+.fx-toast-bar{position:absolute;bottom:0;left:0;height:3px;border-radius:0 0 0 12px;background:currentColor;opacity:.3;animation:fxToastBar linear forwards}
+.fx-toast-success{color:#22c55e}.fx-toast-error{color:#ef4444}.fx-toast-warning{color:#f59e0b}.fx-toast-info{color:#3b82f6}
+@keyframes fxToastBar{from{width:100%}to{width:0}}
+
+/* — Stagger list — */
+.fx-stagger>*{opacity:0;transform:translateY(8px);animation:fxSlideUp .36s cubic-bezier(.22,.61,.36,1) forwards}
+@keyframes fxSlideUp{to{opacity:1;transform:translateY(0)}}
+.fx-stagger>*:nth-child(1){animation-delay:.04s}.fx-stagger>*:nth-child(2){animation-delay:.09s}
+.fx-stagger>*:nth-child(3){animation-delay:.14s}.fx-stagger>*:nth-child(4){animation-delay:.19s}
+.fx-stagger>*:nth-child(5){animation-delay:.24s}.fx-stagger>*:nth-child(n+6){animation-delay:.28s}
+
+/* — Empty state — */
+.fx-empty{text-align:center;padding:44px 20px;color:#8a99b3}
+.fx-empty-icon{font-size:2.4rem;margin-bottom:12px;opacity:.55;display:block}
+.fx-empty-title{font-size:.92rem;font-weight:700;color:#4a5e7a;margin-bottom:6px}
+.fx-empty-desc{font-size:.79rem;line-height:1.55;max-width:280px;margin:0 auto;color:#8a99b3}
+
+/* — Preview area cards — */
+.fx-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:620px){.fx-preview-grid{grid-template-columns:1fr}}
+.fx-prev-card{background:rgba(255,255,255,.82);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(218,230,252,.8);border-radius:14px;padding:16px 18px;box-shadow:0 3px 14px rgba(16,46,98,.06)}
+.fx-prev-title{font-size:.68rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#7a96c4;margin-bottom:12px}
+.fx-prev-demo-card{background:#fff;border:1px solid #e5ecf6;border-radius:10px;padding:14px 16px;cursor:default;transition:transform .3s cubic-bezier(.22,.61,.36,1),box-shadow .3s,border-color .3s;position:relative;overflow:hidden}
+.fx-prev-demo-card::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(130deg,transparent 60%,rgba(29,106,229,.045));opacity:0;transition:opacity .3s;pointer-events:none}
+.fx-prev-demo-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(16,46,98,.13);border-color:#b8d0f5}
+.fx-prev-demo-card:hover::before{opacity:1}
+
+/* — Card hover OFF state (admin tanlasa) — */
+[data-fx-nohover] .card:hover,[data-fx-nohover] .stat-card:hover{transform:none!important;box-shadow:0 10px 34px rgba(16,46,98,.10),0 2px 8px rgba(16,46,98,.05)!important;border-color:rgba(255,255,255,.75)!important}
+[data-fx-nohover] .btn:hover{transform:none!important;filter:none!important}
+[data-fx-nohover] .fin-card:hover,[data-fx-nohover] .ob-card:hover{transform:none!important}
+
+/* — Reduced UI mode — */
+[data-fx-reduced] *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+[data-fx-reduced] .fx-skel{animation:none!important;background:#edf0f7}
+[data-fx-reduced] .fx-prog-bar{animation:none!important}
+[data-fx-reduced] .fx-toast{transition:opacity .1s!important;transform:none!important}
+
+/* — Dark mode — */
+[data-theme="dark"] .fx-row{border-color:rgba(60,90,160,.2)}
+[data-theme="dark"] .fx-row-title{color:#c8deff}
+[data-theme="dark"] .fx-row-desc,.fx-section-hd{color:#4e6b96}
+[data-theme="dark"] .fx-section-hd{color:#4e6b96}
+[data-theme="dark"] .fx-section-hd::after{background:linear-gradient(90deg,rgba(60,90,160,.4),transparent)}
+[data-theme="dark"] .fx-sw-track{background:#233358}
+[data-theme="dark"] .fx-skel{background:linear-gradient(90deg,#182545 25%,#1d2e56 50%,#182545 75%);background-size:600px 100%}
+[data-theme="dark"] .fx-skel-row{border-color:rgba(40,60,100,.4)}
+[data-theme="dark"] .fx-toast{background:#162040;border-color:rgba(60,90,160,.35)}
+[data-theme="dark"] .fx-toast-title{color:#d8eaff}
+[data-theme="dark"] .fx-toast-msg{color:#5c7aaa}
+[data-theme="dark"] .fx-toast-close:hover{background:rgba(60,90,160,.3);color:#c8deff}
+[data-theme="dark"] .fx-prev-card{background:rgba(18,28,56,.72);border-color:rgba(60,90,160,.3)}
+[data-theme="dark"] .fx-prev-demo-card{background:rgba(18,28,56,.85);border-color:rgba(50,80,140,.4)}
+[data-theme="dark"] .fx-prog-wrap{background:rgba(60,90,160,.18)}
+[data-theme="dark"] .fx-badge-active{background:rgba(34,197,94,.12);color:#4ade80}
+[data-theme="dark"] .fx-badge-inactive{background:rgba(239,68,68,.12);color:#f87171}
+[data-theme="dark"] .fx-badge-pending{background:rgba(245,158,11,.12);color:#fbbf24}
+[data-theme="dark"] .fx-badge-info{background:rgba(59,130,246,.12);color:#60a5fa}
+[data-theme="dark"] .fx-badge-process{background:rgba(139,92,246,.12);color:#a78bfa}
+[data-theme="dark"] .fx-empty-title{color:#8aa8d6}
+[data-theme="dark"] .fx-empty-desc{color:#4e6b96}
+
+/* — prefers-reduced-motion — */
+@media(prefers-reduced-motion:reduce){
+  .fx-skel{animation:none!important;background:#edf0f7}
+  .fx-badge-active::before,.fx-badge-pending::before,.fx-badge-process::before{animation:none!important;box-shadow:none!important}
+  .fx-prog-bar{animation:none!important}
+  .fx-toast{transition:opacity .1s!important;transform:none!important}
+  .fx-stagger>*{animation:none!important;opacity:1!important;transform:none!important}
+  .fx-prev-demo-card{transition:none!important}
+}
+</style>
 <script>
 /* ════════════════════════════════════════════════════════════════════
    🎨 PREMIUM FON EFFEKTLARI (FX) — suzuvchi zarrachalar · nurli nuqtalar ·
@@ -18888,9 +19174,10 @@ updateProdBadge();
 
   function cfg(){
     var c={}; try { c=JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){ c={}; }
-    // fish/butterfly default OFF - faqat foydalanuvchi Sozlamalardan yoqsa ishlaydi
     return { enabled: c.enabled!==false, particles: c.particles!==false, premium: c.premium!==false,
-             butterflies: c.butterflies===true, fish: c.fish===true };
+             butterflies: c.butterflies===true, fish: c.fish===true,
+             cardHover: c.cardHover!==false, counter: c.counter!==false,
+             toast: c.toast!==false, reducedUi: c.reducedUi===true };
   }
   function saveCfg(c){ try { localStorage.setItem(KEY, JSON.stringify(c)); } catch(e){} }
   FX.get=cfg;
@@ -19015,34 +19302,89 @@ updateProdBadge();
     var on = c.enabled && !RM;
     if(on){ ensureCanvas(); onResize(); build(); if(canvas) canvas.style.display=''; start(); }
     else { stop(); if(canvas) canvas.style.display='none'; }
+    var root=document.documentElement;
+    if(c.cardHover) root.removeAttribute('data-fx-nohover'); else root.setAttribute('data-fx-nohover','1');
+    if(c.reducedUi||RM) root.setAttribute('data-fx-reduced','1'); else root.removeAttribute('data-fx-reduced');
     FX.syncUI();
   };
   FX.syncUI=function(){
     var c=cfg();
-    var a=document.getElementById('fx-enabled'); if(a) a.checked=c.enabled;
-    var b=document.getElementById('fx-particles'); if(b) b.checked=c.particles;
-    var d=document.getElementById('fx-premium'); if(d) d.checked=c.premium;
-    var e1=document.getElementById('fx-butterflies'); if(e1) e1.checked=c.butterflies;
-    var e2=document.getElementById('fx-fish'); if(e2) e2.checked=c.fish;
-    // Sub-tugmalar faqat asosiy yoqilganda faol
+    var ids={
+      'fx-enabled':c.enabled,'fx-particles':c.particles,'fx-premium':c.premium,
+      'fx-butterflies':c.butterflies,'fx-fish':c.fish,
+      'fx-cardhover':c.cardHover,'fx-counter':c.counter,'fx-toast':c.toast,'fx-reduced':c.reducedUi
+    };
+    Object.keys(ids).forEach(function(id){ var el=document.getElementById(id); if(el) el.checked=ids[id]; });
     ['fx-particles','fx-premium','fx-butterflies','fx-fish'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=!c.enabled; });
   };
   function gv(id){ var e=document.getElementById(id); return e ? !!e.checked : true; }
+  function gvd(id,def){ var e=document.getElementById(id); return e ? !!e.checked : def; }
   FX.onToggle=function(){
     saveCfg({ enabled:gv('fx-enabled'), particles:gv('fx-particles'), premium:gv('fx-premium'),
-              butterflies:gv('fx-butterflies'), fish:gv('fx-fish') });
+              butterflies:gv('fx-butterflies'), fish:gv('fx-fish'),
+              cardHover:gvd('fx-cardhover',true), counter:gvd('fx-counter',true),
+              toast:gvd('fx-toast',true), reducedUi:gv('fx-reduced') });
     FX.apply();
   };
 
+  /* — Toast bildirish tizimi — */
+  FX.showToast=function(type, title, msg, duration){
+    var c=cfg();
+    if(c.reducedUi||RM) return;
+    var root=document.getElementById('fx-toast-root');
+    if(!root){ root=document.createElement('div'); root.id='fx-toast-root'; document.body.appendChild(root); }
+    var icons={success:'✓',error:'✕',warning:'⚠',info:'ℹ'};
+    var dur=duration||3600;
+    var t=document.createElement('div');
+    t.className='fx-toast fx-toast-'+(type||'info');
+    t.style.position='relative';
+    t.innerHTML=
+      '<div class="fx-toast-icon">'+(icons[type]||'ℹ')+'</div>'+
+      '<div class="fx-toast-body">'+
+        '<div class="fx-toast-title">'+title+'</div>'+
+        (msg?'<div class="fx-toast-msg">'+msg+'</div>':'')+
+      '</div>'+
+      '<button class="fx-toast-close" onclick="this.closest(\'.fx-toast\').remove()">✕</button>'+
+      '<div class="fx-toast-bar" style="animation-duration:'+dur+'ms"></div>';
+    root.appendChild(t);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ t.classList.add('in'); }); });
+    setTimeout(function(){
+      t.classList.add('out'); t.classList.remove('in');
+      setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 400);
+    }, dur);
+  };
+
+  /* — Counter animatsiya yordamchi funksiyasi — */
+  FX.animateCount=function(el, target, duration, suffix){
+    var c=cfg();
+    var num=parseFloat(target)||0;
+    if(!c.counter||c.reducedUi||RM){ el.textContent=num.toLocaleString('ru-RU')+(suffix||''); return; }
+    var t0=performance.now(), dur=duration||900, start=0;
+    (function step(now){
+      var p=Math.min((now-t0)/dur,1);
+      var eased=1-Math.pow(1-p,3);
+      el.textContent=Math.round(start+(num-start)*eased).toLocaleString('ru-RU')+(suffix||'');
+      if(p<1) requestAnimationFrame(step);
+    })(t0);
+  };
+
   function boot(){
-    // Bir martalik: 🐟🦋 ni O'CHIQ qilamiz (foydalanuvchi xohlasa Sozlamalardan yoqadi)
     try {
+      var raw={}; try{ raw=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ raw={}; }
+      var changed=false;
+      // Bir martalik: baliq/kapalaklar o'chiq (foydalanuvchi xohlasa yoqadi)
       if(!localStorage.getItem('karo_fx_fishbf_off')){
-        var c={}; try{ c=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ c={}; }
-        c.butterflies=false; c.fish=false;
-        localStorage.setItem(KEY, JSON.stringify(c));
-        localStorage.setItem('karo_fx_fishbf_off','1');
+        raw.butterflies=false; raw.fish=false;
+        localStorage.setItem('karo_fx_fishbf_off','1'); changed=true;
       }
+      // Yangi UI effekt kalitlarini default ON qilib qo'yamiz (faqat birinchi marta)
+      if(!localStorage.getItem('karo_fx_ui_init')){
+        if(raw.cardHover===undefined) raw.cardHover=true;
+        if(raw.counter===undefined) raw.counter=true;
+        if(raw.toast===undefined) raw.toast=true;
+        localStorage.setItem('karo_fx_ui_init','1'); changed=true;
+      }
+      if(changed) localStorage.setItem(KEY, JSON.stringify(raw));
     } catch(e){}
     FX.apply();
   }
@@ -20011,7 +20353,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.40';
+  var APP_VERSION = '1.42';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
