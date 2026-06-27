@@ -1709,6 +1709,61 @@
 })();
 </script>
 
+<!-- PIN MANAGER MODAL -->
+<div id="nls-pin-mgr" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;font-family:Segoe UI,sans-serif">
+  <div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.22)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h2 id="pm-title" style="margin:0;font-size:1.1rem;color:#1a2a40">🔒 PIN</h2>
+      <button onclick="closePinMgr()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#aaa;line-height:1;padding:0 4px">✕</button>
+    </div>
+
+    <!-- eski parolni tekshirish -->
+    <div id="pm-verify" style="display:none">
+      <p style="font-size:0.85rem;color:#7a8fa8;margin:0 0 14px">Parolni o'zgartirish uchun avval amaldagi parolni kiriting:</p>
+      <input type="tel" id="pm-old" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+        style="width:100%;padding:12px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+      <div id="pm-old-err" style="min-height:18px;font-size:0.8rem;font-weight:700;color:#e74c3c;margin:8px 0 0"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="flex:1" onclick="pinMgrVerifyOld()">✅ Tekshirish</button>
+        <button class="btn" style="flex:1;border:1.5px solid #cdd8e6;background:#f7faff" onclick="showPinMgrForgot()">🤔 Unutdim</button>
+      </div>
+    </div>
+
+    <!-- yangi parol o'rnatish -->
+    <div id="pm-set" style="display:none">
+      <div style="margin-bottom:12px">
+        <label style="font-size:0.8rem;font-weight:700;color:#42536b">Yangi parol (4 ta raqam)</label>
+        <input type="tel" id="pm-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+          style="width:100%;padding:12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:0.8rem;font-weight:700;color:#42536b">Tasdiqlash</label>
+        <input type="tel" id="pm-conf" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+          style="width:100%;padding:12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+      </div>
+      <div id="pm-set-msg" style="min-height:18px;font-size:0.82rem;font-weight:700;margin-bottom:10px"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="pinMgrSaveNew()">💾 Parolni saqlash</button>
+    </div>
+
+    <!-- parolni unutgan — zapros -->
+    <div id="pm-forgot" style="display:none">
+      <p style="font-size:0.85rem;color:#7a8fa8;margin:0 0 14px;line-height:1.55">
+        Parolni unutdingizmi? Admin ga zapros yuboring — admin yangi parol o'rnatib beradi.
+      </p>
+      <div id="pm-req-sent" style="display:none;font-size:0.85rem;font-weight:700;color:#1B8A52;margin-bottom:14px">
+        ✅ Zapros yuborildi! Admin ko'rib PIN ni yangilaydi.
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" style="flex:1" onclick="pinMgrSendReq()">📩 Zapros yuborish</button>
+        <button class="btn" style="flex:1;border:1.5px solid #cdd8e6;background:#f7faff" onclick="showPmSection('pm-verify')">← Orqaga</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Skeleton splash — CSS o'zi yo'qotadi (animatsiya/reduced-motion bilan), JS shart emas -->
 <div id="prem-skel" aria-hidden="true">
   <div class="sk-row"><div class="sk-card prem-skeleton"></div><div class="sk-card prem-skeleton"></div><div class="sk-card prem-skeleton"></div><div class="sk-card prem-skeleton"></div></div>
@@ -1758,6 +1813,7 @@
   <button onclick="showPage('chempionat',this)"><sn>N14b</sn>⚽ Jahon chempionati</button>
   <div style="flex:1"></div>
   <button onclick="showPage('trash',this)" id="nav-trash"><sn>N15</sn>🗑 O'chirilgan buyurtmalar</button>
+  <button onclick="showPinMgr()"><sn>N15b</sn>🔒 PIN</button>
   <button onclick="showPage('sozlamalar',this)"><sn>N16</sn>⚙️ Sozlamalar</button>
 </nav>
 
@@ -4582,6 +4638,7 @@
           <button class="btn btn-danger" style="flex:1;min-width:120px" onclick="clearPinSoz()">🗑 Parolni o'chirish</button>
         </div>
         <div id="pin-current-status" style="font-size:0.8rem;color:#7a8fa8"></div>
+        <div id="pin-req-notice"></div>
       </div>
     </div>
 
@@ -8117,6 +8174,74 @@ function clearPinSoz() {
   if(msg){msg.textContent='🔓 Parol o\'chirildi';msg.style.color='#7a8fa8';}
   var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔓 Hozirgi holat: parol yo\'q';
 }
+
+// ── PIN Manager Modal ──
+function showPinMgr() {
+  var el = document.getElementById('nls-pin-mgr'); if(!el) return;
+  el.style.display = 'flex';
+  var old=document.getElementById('pm-old'); if(old) old.value='';
+  var nw=document.getElementById('pm-new'); if(nw) nw.value='';
+  var cf=document.getElementById('pm-conf'); if(cf) cf.value='';
+  var err=document.getElementById('pm-old-err'); if(err) err.textContent='';
+  var msg=document.getElementById('pm-set-msg'); if(msg) msg.textContent='';
+  var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='none';
+  var title=document.getElementById('pm-title');
+  if(localStorage.getItem('karo_pin')) {
+    if(title) title.textContent='🔒 PIN o\'zgartirish';
+    showPmSection('pm-verify');
+  } else {
+    if(title) title.textContent='🔒 PIN o\'rnatish';
+    showPmSection('pm-set');
+  }
+}
+function closePinMgr() {
+  var el=document.getElementById('nls-pin-mgr'); if(el) el.style.display='none';
+}
+function showPmSection(id) {
+  ['pm-verify','pm-set','pm-forgot'].forEach(function(s){
+    var el=document.getElementById(s); if(el) el.style.display='none';
+  });
+  var el=document.getElementById(id); if(el) el.style.display='block';
+}
+function pinMgrVerifyOld() {
+  var val=(document.getElementById('pm-old')||{}).value||'';
+  var saved=localStorage.getItem('karo_pin')||'';
+  var err=document.getElementById('pm-old-err');
+  if(!val||val.length<4){ if(err) err.textContent='4 ta raqam kiriting'; return; }
+  if(val===saved){
+    if(err) err.textContent='';
+    var title=document.getElementById('pm-title'); if(title) title.textContent='🔒 Yangi PIN o\'rnatish';
+    showPmSection('pm-set');
+  } else {
+    if(err) err.textContent='❌ Kod noto\'g\'ri. Yana urinib ko\'ring yoki "Unutdim" tugmasini bosing.';
+  }
+}
+function showPinMgrForgot() {
+  var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='none';
+  showPmSection('pm-forgot');
+}
+function pinMgrSaveNew() {
+  var n=(document.getElementById('pm-new')||{}).value||'';
+  var c=(document.getElementById('pm-conf')||{}).value||'';
+  var msg=document.getElementById('pm-set-msg');
+  function setMsg(txt,col){ if(msg){ msg.textContent=txt; msg.style.color=col||'#e74c3c'; } }
+  if(!/^\d{4}$/.test(n)){ setMsg('4 ta raqam kiriting'); return; }
+  if(n!==c){ setMsg('Parollar mos kelmadi'); return; }
+  localStorage.setItem('karo_pin',n);
+  localStorage.removeItem('karo_pin_req');
+  setMsg('✅ Parol saqlandi!','#1B8A52');
+  var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔒 Hozirgi holat: parol o\'rnatilgan';
+  setTimeout(closePinMgr, 1300);
+}
+function pinMgrSendReq() {
+  localStorage.setItem('karo_pin_req', JSON.stringify({pending:true, ts:Date.now()}));
+  var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='block';
+}
+function pinMgrCloseReq() {
+  localStorage.removeItem('karo_pin_req');
+  var el=document.getElementById('pin-req-notice'); if(el) el.innerHTML='';
+}
+
 function loadSozlamalarInputs() {
   var soz = getSozlamalar();
   var a1 = soz.a1 || PECHAT_DEFAULT_A1;
@@ -8148,6 +8273,18 @@ function loadSozlamalarInputs() {
   renderTable('a0-table-body', PECHAT_TIERS_A0, PECHAT_TIER_LBLS_A0, a0);
   var st=document.getElementById('pin-current-status');
   if(st) st.textContent = localStorage.getItem('karo_pin') ? '🔒 Hozirgi holat: parol o\'rnatilgan' : '🔓 Hozirgi holat: parol yo\'q';
+  var rn=document.getElementById('pin-req-notice');
+  if(rn){
+    var req=null; try{ req=JSON.parse(localStorage.getItem('karo_pin_req')||'null'); }catch(e){}
+    if(req&&req.pending){
+      var dt=req.ts ? new Date(req.ts).toLocaleString('uz-UZ') : '';
+      rn.innerHTML='<div style="margin-top:12px;padding:10px 14px;background:#fff3e0;border:1.5px solid #f0b429;border-radius:9px;font-size:0.82rem">'
+        +'<b style="color:#7d4a00">⚠️ PIN tiklash so\'rovi bor</b>'+(dt?' <span style="color:#b07a00;font-weight:400">('+dt+')</span>':'')+'<br>'
+        +'<span style="color:#7d4a00">Yangi parol o\'rnating (yuqoridagi formadan) va "Saqlash" ni bosing.</span>'
+        +' <button onclick="pinMgrCloseReq()" style="margin-top:8px;display:block;background:#f0b429;border:none;border-radius:6px;padding:4px 12px;font-weight:700;cursor:pointer;color:#3d2a00">✅ Bajarildi — zaprosni yoping</button>'
+        +'</div>';
+    } else { rn.innerHTML=''; }
+  }
 }
 
 function saveSozlamalar() {
@@ -20549,7 +20686,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.46';
+  var APP_VERSION = '1.47';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
