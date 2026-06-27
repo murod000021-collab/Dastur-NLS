@@ -1378,8 +1378,9 @@
 
     /* ── Jadvallar ── */
     .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; width: 100% !important; }
-    .table-wrap table { display: table !important; }
-    .card > table, .card > div > table, table:not(#page-kalkulyator table) {
+    /* Yuqori specificity bilan table-wrap ichidagi jadval to'g'ri table sifatida qolsin (display:block o'chirib qo'ymasin) */
+    .card > .table-wrap > table { display: table !important; width: auto !important; min-width: 100%; }
+    .card > table, .card > div:not(.table-wrap) > table, table:not(#page-kalkulyator table):not(.table-wrap table) {
       display: block !important;
       overflow-x: auto !important;
       -webkit-overflow-scrolling: touch;
@@ -1387,6 +1388,10 @@
     }
     th, td { padding: 6px 8px !important; font-size: 0.74rem !important; }
     #orders-table td, #orders-table th { font-size: 0.7rem !important; padding: 5px 6px !important; }
+    /* Orders thead th — tbody id="orders-table" bo'lgani uchun alohida */
+    #page-orders .table-wrap thead th { font-size: 0.7rem !important; padding: 5px 4px !important; white-space: nowrap !important; }
+    /* Orders jadval status select — width:100% va font-size:16px ni bekor qilamiz */
+    #orders-table select { font-size: 0.75rem !important; width: auto !important; max-width: 95px !important; }
 
     /* ── Kassa, xarajatlar grids ── */
     .kassa-grid, .xr-grid { grid-template-columns: 1fr !important; }
@@ -1626,7 +1631,7 @@
     .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:transparent;transition:background .15s,border-color .15s}
     .pin-dot.pf{background:#79b0ff;border-color:#79b0ff}
     .pin-dot.pe{background:#ff6b6b;border-color:#ff6b6b}
-    .pin-key{aspect-ratio:1;min-height:62px;border:1.5px solid rgba(255,255,255,0.15);border-radius:16px;background:rgba(255,255,255,0.09);color:#fff;font-size:1.5rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .1s;-webkit-tap-highlight-color:transparent}
+    .pin-key{width:68px;height:68px;box-sizing:border-box;border:1.5px solid rgba(255,255,255,0.15);border-radius:16px;background:rgba(255,255,255,0.09);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .1s;-webkit-tap-highlight-color:transparent}
     .pin-key:active{background:rgba(255,255,255,0.24);transform:scale(0.92)}
     @keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-11px)}40%{transform:translateX(11px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
     .pin-shake{animation:pinShake .42s ease}
@@ -1639,7 +1644,7 @@
       <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
     </div>
     <div id="pin-err-msg" style="min-height:22px;font-size:0.79rem;color:#ff7b7b;font-weight:700;margin-bottom:18px"></div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:250px;margin:0 auto">
+    <div style="display:grid;grid-template-columns:repeat(3,68px);gap:10px;justify-content:center;margin:0 auto">
       <button class="pin-key" onclick="PIN.press('1')">1</button>
       <button class="pin-key" onclick="PIN.press('2')">2</button>
       <button class="pin-key" onclick="PIN.press('3')">3</button>
@@ -1711,54 +1716,53 @@
 
 <!-- PIN MANAGER MODAL -->
 <div id="nls-pin-mgr" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;font-family:Segoe UI,sans-serif">
-  <div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.22)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h2 id="pm-title" style="margin:0;font-size:1.1rem;color:#1a2a40">🔒 PIN</h2>
-      <button onclick="closePinMgr()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#aaa;line-height:1;padding:0 4px">✕</button>
+  <style>
+    .pm-dot{width:16px;height:16px;border-radius:50%;border:2.5px solid #b0bec5;background:transparent;transition:background .12s,border-color .12s}
+    .pm-dot.on{background:#1457C4;border-color:#1457C4}
+    .pm-key2{width:100%;padding:15px 0;font-size:1.25rem;font-weight:700;border:1.5px solid #dde4ef;border-radius:12px;background:#f7faff;cursor:pointer;color:#1a2a40;transition:background .1s,transform .08s;user-select:none;-webkit-user-select:none}
+    .pm-key2:active{background:#e3ecff;transform:scale(0.93)}
+    @keyframes pmShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+    .pm-shake{animation:pmShake .38s ease}
+  </style>
+  <div style="background:#fff;border-radius:18px;padding:22px 18px;max-width:310px;width:92%;box-shadow:0 8px 40px rgba(0,0,0,0.22)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2 id="pm-title" style="margin:0;font-size:1rem;color:#1a2a40">🔒 PIN</h2>
+      <button onclick="closePinMgr()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#aaa;line-height:1;padding:0 4px">✕</button>
+    </div>
+    <p id="pm-sub" style="font-size:0.8rem;color:#7a8fa8;margin:0 0 8px;text-align:center;min-height:16px"></p>
+
+    <!-- keypad va nuqtalar (forgot holatida yashiriladi) -->
+    <div id="pm-pad-area">
+      <div id="pm-dots" style="display:flex;justify-content:center;gap:18px;margin:8px 0 4px">
+        <div class="pm-dot" id="pmd0"></div><div class="pm-dot" id="pmd1"></div><div class="pm-dot" id="pmd2"></div><div class="pm-dot" id="pmd3"></div>
+      </div>
+      <div id="pm-err" style="min-height:20px;font-size:0.78rem;font-weight:700;color:#e74c3c;text-align:center;margin:4px 0 8px"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+        <button class="pm-key2" onclick="pmPress('1')">1</button>
+        <button class="pm-key2" onclick="pmPress('2')">2</button>
+        <button class="pm-key2" onclick="pmPress('3')">3</button>
+        <button class="pm-key2" onclick="pmPress('4')">4</button>
+        <button class="pm-key2" onclick="pmPress('5')">5</button>
+        <button class="pm-key2" onclick="pmPress('6')">6</button>
+        <button class="pm-key2" onclick="pmPress('7')">7</button>
+        <button class="pm-key2" onclick="pmPress('8')">8</button>
+        <button class="pm-key2" onclick="pmPress('9')">9</button>
+        <div></div>
+        <button class="pm-key2" onclick="pmPress('0')">0</button>
+        <button class="pm-key2" onclick="pmPress('del')" style="font-size:1rem">←</button>
+      </div>
+      <div style="margin-top:10px">
+        <button id="pm-forgot-btn" onclick="showPinMgrForgot()" style="display:none;width:100%;padding:9px;border:1.5px solid #cdd8e6;border-radius:9px;background:#f7faff;font-size:0.82rem;cursor:pointer;color:#42536b">🤔 Parolni unutdim</button>
+      </div>
     </div>
 
-    <!-- eski parolni tekshirish -->
-    <div id="pm-verify" style="display:none">
-      <p style="font-size:0.85rem;color:#7a8fa8;margin:0 0 14px">Parolni o'zgartirish uchun avval amaldagi parolni kiriting:</p>
-      <input type="tel" id="pm-old" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
-        style="width:100%;padding:12px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
-        oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-      <div id="pm-old-err" style="min-height:18px;font-size:0.8rem;font-weight:700;color:#e74c3c;margin:8px 0 0"></div>
-      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn btn-primary" style="flex:1" onclick="pinMgrVerifyOld()">✅ Tekshirish</button>
-        <button class="btn" style="flex:1;border:1.5px solid #cdd8e6;background:#f7faff" onclick="showPinMgrForgot()">🤔 Unutdim</button>
-      </div>
-    </div>
-
-    <!-- yangi parol o'rnatish -->
-    <div id="pm-set" style="display:none">
-      <div style="margin-bottom:12px">
-        <label style="font-size:0.8rem;font-weight:700;color:#42536b">Yangi parol (4 ta raqam)</label>
-        <input type="tel" id="pm-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
-          style="width:100%;padding:12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-      </div>
-      <div style="margin-bottom:12px">
-        <label style="font-size:0.8rem;font-weight:700;color:#42536b">Tasdiqlash</label>
-        <input type="tel" id="pm-conf" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
-          style="width:100%;padding:12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.4rem;letter-spacing:10px;outline:none;box-sizing:border-box;text-align:center"
-          oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-      </div>
-      <div id="pm-set-msg" style="min-height:18px;font-size:0.82rem;font-weight:700;margin-bottom:10px"></div>
-      <button class="btn btn-primary" style="width:100%" onclick="pinMgrSaveNew()">💾 Parolni saqlash</button>
-    </div>
-
-    <!-- parolni unutgan — zapros -->
-    <div id="pm-forgot" style="display:none">
-      <p style="font-size:0.85rem;color:#7a8fa8;margin:0 0 14px;line-height:1.55">
-        Parolni unutdingizmi? Admin ga zapros yuboring — admin yangi parol o'rnatib beradi.
-      </p>
-      <div id="pm-req-sent" style="display:none;font-size:0.85rem;font-weight:700;color:#1B8A52;margin-bottom:14px">
-        ✅ Zapros yuborildi! Admin ko'rib PIN ni yangilaydi.
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-primary" style="flex:1" onclick="pinMgrSendReq()">📩 Zapros yuborish</button>
-        <button class="btn" style="flex:1;border:1.5px solid #cdd8e6;background:#f7faff" onclick="showPmSection('pm-verify')">← Orqaga</button>
+    <!-- zapros bo'limi (faqat forgot holatida) -->
+    <div id="pm-zapros-area" style="display:none">
+      <p style="font-size:0.82rem;color:#7a8fa8;margin:0 0 12px;line-height:1.5">Admin ga zapros yuboring — admin yangi parol o'rnatib beradi.</p>
+      <div id="pm-req-sent" style="display:none;font-size:0.82rem;font-weight:700;color:#1B8A52;margin-bottom:12px">✅ Zapros yuborildi! Admin ko'rib chiqadi.</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="pinMgrSendReq()" style="flex:1;padding:11px;background:#f0b429;border:none;border-radius:9px;font-weight:700;cursor:pointer;color:#3d2a00;font-size:0.88rem">📩 Zapros yuborish</button>
+        <button onclick="pmGoBack()" style="flex:1;padding:11px;border:1.5px solid #cdd8e6;border-radius:9px;background:#f7faff;cursor:pointer;color:#42536b;font-size:0.82rem">← Orqaga</button>
       </div>
     </div>
   </div>
@@ -2318,13 +2322,13 @@
 </div>
 <div id="page-orders" class="page">
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0"><sn>H6</sn>➕ Yangi buyurtma qo'shish</h2>
       <div style="position:relative">
         <button onclick="toggleKarobkaTuri()" class="btn btn-primary" style="background:linear-gradient(135deg,#1a3c5e,#2d6a9f)">
           📋 Karobka turi
         </button>
-        <div id="karobka-turi-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:360px;background:#fff;border:1.5px solid #2d6a9f;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;overflow:hidden">
+        <div id="karobka-turi-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 6px);width:360px;max-width:calc(100vw - 16px);background:#fff;border:1.5px solid #2d6a9f;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:9999;overflow:hidden">
           <div style="padding:10px 14px;background:#1a3c5e;color:#fff;font-size:0.85rem;font-weight:700">
             📋 Qog'oz varianti tanlang — gramaj va rang avtomatik o'rnatiladi
           </div>
@@ -8175,69 +8179,96 @@ function clearPinSoz() {
   var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔓 Hozirgi holat: parol yo\'q';
 }
 
-// ── PIN Manager Modal ──
-function showPinMgr() {
-  var el = document.getElementById('nls-pin-mgr'); if(!el) return;
-  el.style.display = 'flex';
-  var old=document.getElementById('pm-old'); if(old) old.value='';
-  var nw=document.getElementById('pm-new'); if(nw) nw.value='';
-  var cf=document.getElementById('pm-conf'); if(cf) cf.value='';
-  var err=document.getElementById('pm-old-err'); if(err) err.textContent='';
-  var msg=document.getElementById('pm-set-msg'); if(msg) msg.textContent='';
-  var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='none';
-  var title=document.getElementById('pm-title');
-  if(localStorage.getItem('karo_pin')) {
-    if(title) title.textContent='🔒 PIN o\'zgartirish';
-    showPmSection('pm-verify');
-  } else {
-    if(title) title.textContent='🔒 PIN o\'rnatish';
-    showPmSection('pm-set');
-  }
+// ── PIN Manager Modal (keypad) ──
+var _pmState='verify', _pmVal='', _pmNew1='';
+function showPinMgr(){
+  var el=document.getElementById('nls-pin-mgr'); if(!el) return;
+  el.style.display='flex';
+  _pmVal=''; _pmNew1='';
+  _pmState=localStorage.getItem('karo_pin')?'verify':'new1';
+  pmRender();
 }
-function closePinMgr() {
+function closePinMgr(){
   var el=document.getElementById('nls-pin-mgr'); if(el) el.style.display='none';
 }
-function showPmSection(id) {
-  ['pm-verify','pm-set','pm-forgot'].forEach(function(s){
-    var el=document.getElementById(s); if(el) el.style.display='none';
-  });
-  var el=document.getElementById(id); if(el) el.style.display='block';
-}
-function pinMgrVerifyOld() {
-  var val=(document.getElementById('pm-old')||{}).value||'';
-  var saved=localStorage.getItem('karo_pin')||'';
-  var err=document.getElementById('pm-old-err');
-  if(!val||val.length<4){ if(err) err.textContent='4 ta raqam kiriting'; return; }
-  if(val===saved){
-    if(err) err.textContent='';
-    var title=document.getElementById('pm-title'); if(title) title.textContent='🔒 Yangi PIN o\'rnatish';
-    showPmSection('pm-set');
-  } else {
-    if(err) err.textContent='❌ Kod noto\'g\'ri. Yana urinib ko\'ring yoki "Unutdim" tugmasini bosing.';
+function pmUpdateDots(){
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('pmd'+i);
+    if(d){ if(i<_pmVal.length) d.classList.add('on'); else d.classList.remove('on'); }
   }
 }
-function showPinMgrForgot() {
-  var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='none';
-  showPmSection('pm-forgot');
+function pmSetErr(txt,col){
+  var el=document.getElementById('pm-err'); if(el){el.textContent=txt; el.style.color=col||'#e74c3c';}
 }
-function pinMgrSaveNew() {
-  var n=(document.getElementById('pm-new')||{}).value||'';
-  var c=(document.getElementById('pm-conf')||{}).value||'';
-  var msg=document.getElementById('pm-set-msg');
-  function setMsg(txt,col){ if(msg){ msg.textContent=txt; msg.style.color=col||'#e74c3c'; } }
-  if(!/^\d{4}$/.test(n)){ setMsg('4 ta raqam kiriting'); return; }
-  if(n!==c){ setMsg('Parollar mos kelmadi'); return; }
-  localStorage.setItem('karo_pin',n);
-  localStorage.removeItem('karo_pin_req');
-  setMsg('✅ Parol saqlandi!','#1B8A52');
-  var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔒 Hozirgi holat: parol o\'rnatilgan';
-  setTimeout(closePinMgr, 1300);
+function pmShake(){
+  var el=document.getElementById('pm-dots'); if(!el) return;
+  el.classList.remove('pm-shake'); void el.offsetWidth; el.classList.add('pm-shake');
+  setTimeout(function(){el.classList.remove('pm-shake');},420);
 }
-function pinMgrSendReq() {
-  localStorage.setItem('karo_pin_req', JSON.stringify({pending:true, ts:Date.now()}));
+function pmRender(){
+  var isForgot=(_pmState==='forgot');
+  var pad=document.getElementById('pm-pad-area'); if(pad) pad.style.display=isForgot?'none':'block';
+  var zap=document.getElementById('pm-zapros-area'); if(zap) zap.style.display=isForgot?'block':'none';
+  var fb=document.getElementById('pm-forgot-btn'); if(fb) fb.style.display='none';
+  var title=document.getElementById('pm-title');
+  var sub=document.getElementById('pm-sub');
+  pmSetErr(''); pmUpdateDots();
+  if(_pmState==='verify'){
+    if(title) title.textContent='🔒 PIN o\'zgartirish';
+    if(sub) sub.textContent='Amaldagi parolni kiriting';
+    if(fb) fb.style.display='block';
+  } else if(_pmState==='new1'){
+    if(title) title.textContent=localStorage.getItem('karo_pin')?'🔒 Yangi PIN':'🔒 PIN o\'rnatish';
+    if(sub) sub.textContent='Yangi parol kiriting (4 ta raqam)';
+  } else if(_pmState==='new2'){
+    if(title) title.textContent='🔒 Tasdiqlash';
+    if(sub) sub.textContent='Yangi parolni qayta kiriting';
+  } else if(_pmState==='forgot'){
+    if(title) title.textContent='🔒 Parolni unutdim';
+    if(sub) sub.textContent='';
+    var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='none';
+  }
+}
+function pmPress(k){
+  if(_pmState==='forgot') return;
+  if(k==='del'){ _pmVal=_pmVal.slice(0,-1); pmSetErr(''); pmUpdateDots(); return; }
+  if(_pmVal.length>=4) return;
+  _pmVal+=k; pmUpdateDots();
+  if(_pmVal.length===4) setTimeout(pmCheck,80);
+}
+function pmCheck(){
+  if(_pmState==='verify'){
+    var saved=localStorage.getItem('karo_pin')||'';
+    if(!saved||_pmVal===saved){
+      _pmVal=''; _pmNew1=''; _pmState='new1'; pmRender();
+    } else {
+      pmShake(); pmSetErr('❌ Noto\'g\'ri kod');
+      _pmVal=''; pmUpdateDots();
+    }
+  } else if(_pmState==='new1'){
+    _pmNew1=_pmVal; _pmVal=''; _pmState='new2'; pmRender();
+  } else if(_pmState==='new2'){
+    if(_pmVal===_pmNew1){
+      localStorage.setItem('karo_pin',_pmNew1);
+      localStorage.removeItem('karo_pin_req');
+      pmSetErr('✅ Parol saqlandi!','#1B8A52');
+      var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔒 Hozirgi holat: parol o\'rnatilgan';
+      var rn=document.getElementById('pin-req-notice'); if(rn) rn.innerHTML='';
+      setTimeout(closePinMgr,1300);
+    } else {
+      pmShake(); pmSetErr('❌ Mos kelmadi — birinchisini qayta kiriting');
+      _pmVal=''; _pmNew1='';
+      setTimeout(function(){ _pmState='new1'; pmRender(); },1100);
+    }
+  }
+}
+function showPinMgrForgot(){ _pmVal=''; _pmState='forgot'; pmRender(); }
+function pmGoBack(){ _pmVal=''; _pmState='verify'; pmRender(); }
+function pinMgrSendReq(){
+  localStorage.setItem('karo_pin_req',JSON.stringify({pending:true,ts:Date.now()}));
   var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='block';
 }
-function pinMgrCloseReq() {
+function pinMgrCloseReq(){
   localStorage.removeItem('karo_pin_req');
   var el=document.getElementById('pin-req-notice'); if(el) el.innerHTML='';
 }
@@ -20686,7 +20717,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.47';
+  var APP_VERSION = '1.49';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
