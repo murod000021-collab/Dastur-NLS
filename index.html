@@ -2,8 +2,61 @@
 <!-- saved from url=(0049)file:///C:/Users/user/Desktop/karobka_dastur.html -->
 <html lang="uz"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>NLS BOX Hisobot</title>
+
+<!-- ===== PWA (NLS Print) ===== -->
+<meta name="theme-color" content="#0A1D3F">
+<meta name="color-scheme" content="light only">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NLS Print">
+<meta name="application-name" content="NLS Print">
+<script>
+(function(){
+  // 1) Service Worker registratsiya
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').catch(function(e){ console.warn('NLS SW xato:', e); });
+    });
+  }
+  // 2) Onlayn/Oflayn banner — app onlayn ishlaydi, internet yo'qolsa ogohlantiradi
+  var bar=null;
+  function ensureBar(){
+    if(bar) return bar;
+    if(!document.body){ return null; }
+    var s=document.createElement('style');
+    s.textContent='#nls-offline-bar{position:fixed;left:0;right:0;top:0;z-index:2147483647;'+
+      'background:linear-gradient(135deg,#b3261e,#e03e2e);color:#fff;'+
+      'font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'+
+      'padding:calc(9px + env(safe-area-inset-top,0px)) 14px 9px;text-align:center;'+
+      'box-shadow:0 3px 12px rgba(0,0,0,.25);transform:translateY(-130%);transition:transform .3s ease}'+
+      '#nls-offline-bar.show{transform:translateY(0)}'+
+      '#nls-offline-bar .d{display:inline-block;width:8px;height:8px;border-radius:50%;background:#fff;margin-right:8px;vertical-align:middle;animation:nlsblink 1s infinite}'+
+      '#nls-offline-bar button{margin-left:10px;background:#fff;color:#b3261e;border:0;border-radius:8px;padding:5px 12px;font-weight:700;font-size:12px;cursor:pointer}'+
+      '@keyframes nlsblink{50%{opacity:.3}}';
+    document.head.appendChild(s);
+    bar=document.createElement('div');
+    bar.id='nls-offline-bar';
+    bar.innerHTML='<span class="d"></span><b>Internet yo’q</b> — NLS Print onlayn ishlaydi, sinxronizatsiya to‘xtatildi <button type="button">Qayta urinish</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('button').onclick=function(){ navigator.onLine ? location.reload() : update(); };
+    return bar;
+  }
+  function update(){ if(!ensureBar()) return; navigator.onLine ? bar.classList.remove('show') : bar.classList.add('show'); }
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(update,500); });
+  else setTimeout(update,500);
+})();
+</script>
+<!-- ===== /PWA ===== -->
 <!-- ☁️ CLOUD SYNC (Supabase) — bulutli baza qatlami -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
