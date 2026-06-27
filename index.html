@@ -1215,6 +1215,306 @@
   /* — Reduced-motion: skeletonni darrov yashir (animatsiyasiz qotib qolmasin) — */
   @media (prefers-reduced-motion: reduce) { #prem-skel { display: none !important; } }
 
+  /* ================================================================
+     📱 KARVON FOOD — KENG QAMROVLI MOBILE RESPONSIVE (v1.35)
+     Breakpoints: ≤640px mobil | 641–1024px planshet | 1025px+ desktop
+     ================================================================ */
+
+  /* — Global — overflow oldini olish — */
+  html { overflow-x: hidden; }
+  body { overflow-x: hidden; max-width: 100vw; }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  /* ─── PLANSHET 641–1024px ─────────────────────────────────────── */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    main { padding: 18px 16px; }
+    .card { padding: 18px 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .fin-grid { grid-template-columns: repeat(3, 1fr); }
+    .oborot-bar { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    nav button { padding: 11px 12px; font-size: 0.83rem; }
+    div[style*="grid-template-columns:1fr 1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+    #cst-box, .auth-modal-box { max-width: 90vw !important; }
+  }
+
+  /* ─── MOBIL ≤640px ────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+
+    /* ── Header ── */
+    header { padding: 7px 10px !important; gap: 6px !important; min-height: 50px; }
+    header h1 { font-size: 0.85rem !important; }
+    header img { height: 26px !important; }
+    header #currentDate { display: none !important; }
+    header #currentTime { font-size: 0.7rem !important; letter-spacing: 0.5px !important; }
+    header > div:last-child { display: none !important; }
+
+    /* ── Nav — gorizontal scroll ── */
+    nav {
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 6px !important;
+      scrollbar-width: none !important;
+      position: sticky; top: 0; z-index: 50;
+    }
+    nav::-webkit-scrollbar { display: none !important; }
+    nav button {
+      padding: 9px 10px !important;
+      font-size: 0.76rem !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      min-height: 44px;
+    }
+
+    /* ── Main ── */
+    main { padding: 10px 8px !important; max-width: 100% !important; }
+
+    /* ── Cards ── */
+    .card {
+      padding: 13px 11px !important;
+      border-radius: 12px !important;
+      margin-bottom: 10px !important;
+      overflow: hidden;
+    }
+    .card h2 { font-size: 0.9rem !important; padding-bottom: 10px !important; margin-bottom: 14px !important; }
+
+    /* ── Stats Grid → 2 ustun ── */
+    .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin-bottom: 12px !important; }
+    .stat-card { padding: 11px 10px !important; border-radius: 11px !important; }
+    .stat-card .value { font-size: 1.1rem !important; }
+    .stat-card .label { font-size: 0.6rem !important; }
+    .stat-card .sub { font-size: 0.66rem !important; margin-top: 3px !important; }
+
+    /* ── Fin Grid → 2 ustun ── */
+    .fin-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .fin-card { padding: 11px 10px !important; }
+    .fin-card .fc-label { font-size: 0.72rem !important; min-height: unset !important; }
+    .fin-card .fc-value { font-size: 1rem !important; }
+
+    /* ── Oborot Bar → 1 ustun ── */
+    .oborot-bar { grid-template-columns: 1fr !important; gap: 8px !important; }
+    .ob-card .ob-value { font-size: 1.25rem !important; }
+
+    /* ── Form ── */
+    .form-grid { grid-template-columns: 1fr !important; gap: 9px !important; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea,
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="month"],
+    input[type="email"],
+    input[type="password"],
+    select, textarea {
+      font-size: 16px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    /* ── Buttons ── */
+    .btn { padding: 10px 13px !important; font-size: 0.81rem !important; min-height: 42px !important; }
+    .btn-sm { padding: 7px 11px !important; font-size: 0.76rem !important; min-height: 36px !important; }
+
+    /* ── Flex layout ── */
+    .flex-between { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+    .flex-between > * { width: 100% !important; }
+    .flex-gap { flex-wrap: wrap !important; gap: 6px !important; }
+
+    /* ── Jadvallar ── */
+    .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; width: 100% !important; }
+    .table-wrap table { display: table !important; }
+    .card > table, .card > div > table, table:not(#page-kalkulyator table) {
+      display: block !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
+    th, td { padding: 6px 8px !important; font-size: 0.74rem !important; }
+    #orders-table td, #orders-table th { font-size: 0.7rem !important; padding: 5px 6px !important; }
+
+    /* ── Kassa, xarajatlar grids ── */
+    .kassa-grid, .xr-grid { grid-template-columns: 1fr !important; }
+
+    /* ── Inline grid overrides — explicit column counts ── */
+    div[style*="grid-template-columns:1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+    div[style*="grid-template-columns:1fr 1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+    div[style*="grid-template-columns:repeat(2"],
+    div[style*="grid-template-columns: repeat(2"] { grid-template-columns: 1fr !important; }
+    div[style*="grid-template-columns:repeat(3"],
+    div[style*="grid-template-columns: repeat(3"] { grid-template-columns: 1fr 1fr !important; }
+    div[style*="grid-template-columns:repeat(4"],
+    div[style*="grid-template-columns: repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+
+    /* ── Production kartalar — gorizontal split → vertical ── */
+    div[style*="justify-content:space-between"][style*="flex-wrap:wrap"],
+    div[style*="justify-content: space-between"][style*="flex-wrap: wrap"] {
+      flex-wrap: wrap !important;
+    }
+    /* Production karta body — left+right → top+bottom */
+    div[style*="flex:1;min-width:200px"] { min-width: 0 !important; width: 100% !important; flex-basis: 100% !important; }
+    div[style*="flex:1;min-width:260px"],
+    div[style*="flex: 1; min-width: 260px"] { min-width: 0 !important; width: 100% !important; flex-basis: 100% !important; }
+    div[style*="flex:1;min-width:280px"],
+    div[style*="flex: 1; min-width: 280px"] { min-width: 0 !important; width: 100% !important; flex-basis: 100% !important; }
+    /* Production — o'ng tomon (qo'shish panel) butun kenglikka chiqsin */
+    div[style*="display:flex;flex-direction:column;gap:5px;flex-shrink:0"] {
+      flex-shrink: 1 !important;
+      width: 100% !important;
+      margin-top: 8px !important;
+    }
+    div[style*="display:flex;flex-direction:column;gap:5px;flex-shrink:0"] input[type="number"] {
+      width: 100% !important;
+    }
+
+    /* ── Bosqich tab tugmalari — scroll ── */
+    #ptab-gofra, #ptab-kasherovka, #ptab-tigel, #ptab-fleksa, #ptab-quloq {
+      padding: 7px 9px !important;
+      font-size: 0.74rem !important;
+      white-space: nowrap;
+    }
+    div[style*="gap:8px;margin-bottom:16px;flex-wrap:wrap"] {
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none !important;
+      padding-bottom: 2px;
+    }
+    div[style*="gap:8px;margin-bottom:16px;flex-wrap:wrap"]::-webkit-scrollbar { display: none !important; }
+
+    /* ── Savdo, orders action buttons wrap ── */
+    div[style*="display:flex;gap:7px;flex-wrap:wrap"],
+    div[style*="display: flex; gap: 7px; flex-wrap: wrap"] {
+      flex-wrap: wrap !important;
+      gap: 5px !important;
+    }
+
+    /* ── Inline input widths — mobilda 100% ── */
+    input[style*="width:120px"], input[style*="width: 120px"],
+    input[style*="width:140px"], input[style*="width: 140px"],
+    input[style*="width:150px"], input[style*="width: 150px"],
+    input[style*="width:160px"], input[style*="width: 160px"],
+    input[style*="width:190px"], input[style*="width: 190px"],
+    input[style*="width:200px"], input[style*="width: 200px"],
+    input[style*="width:210px"], input[style*="width: 210px"],
+    input[style*="width:220px"], input[style*="width: 220px"] {
+      width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    select[style*="width:160px"], select[style*="width: 160px"],
+    select[style*="width:180px"], select[style*="width: 180px"],
+    select[style*="width:190px"], select[style*="width: 190px"],
+    select[style*="width:210px"], select[style*="width: 210px"] {
+      width: 100% !important;
+    }
+
+    /* ── Modals — barcha overlay va modal boxlar ── */
+    [id$="-overlay"] { padding: 10px !important; align-items: flex-end !important; }
+    [id$="-modal"] { padding: 10px !important; align-items: center !important; }
+    #cst-overlay { align-items: flex-end !important; padding: 0 !important; }
+    #cst-box {
+      max-width: 100% !important;
+      width: 100% !important;
+      max-height: 85vh !important;
+      overflow-y: auto !important;
+      border-radius: 18px 18px 0 0 !important;
+      padding: 18px 14px 24px !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
+    }
+    .auth-modal-box {
+      max-width: calc(100vw - 20px) !important;
+      width: 100% !important;
+      max-height: 90vh !important;
+      overflow-y: auto !important;
+      padding: 16px 14px !important;
+      border-radius: 16px !important;
+      box-sizing: border-box !important;
+    }
+    #cmdk-overlay { padding-top: 6vh !important; align-items: flex-start !important; }
+    #cmdk-panel {
+      width: calc(100vw - 20px) !important;
+      max-width: 100% !important;
+      max-height: 80vh !important;
+      border-radius: 14px !important;
+    }
+    /* Dinamik modal (JS bilan yaratilgan) */
+    div[style*="max-width:600px"],
+    div[style*="max-width: 600px"],
+    div[style*="max-width:580px"],
+    div[style*="max-width:560px"],
+    div[style*="max-width:500px"] {
+      max-width: calc(100vw - 20px) !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    /* ── Yirik raqamlar — kichraytirish ── */
+    div[style*="font-size:2rem"], div[style*="font-size: 2rem"] { font-size: 1.45rem !important; }
+    div[style*="font-size:1.85rem"], div[style*="font-size: 1.85rem"] { font-size: 1.35rem !important; }
+    div[style*="font-size:1.55rem"], div[style*="font-size: 1.55rem"] { font-size: 1.2rem !important; }
+    div[style*="font-size:1.4rem"], div[style*="font-size: 1.4rem"] { font-size: 1.1rem !important; }
+
+    /* ── Kalkulyator ── */
+    #page-kalkulyator .card { padding: 16px 14px !important; }
+    #page-kalkulyator .kchoices,
+    #page-kalkulyator .ksumm { grid-template-columns: 1fr 1fr !important; }
+    #page-kalkulyator .krow2 { grid-template-columns: 1fr !important; }
+    #page-kalkulyator .ktimes { display: none !important; }
+    #page-kalkulyator .kq { font-size: 20px !important; }
+    #page-kalkulyator .ksumm .kv { font-size: 16px !important; }
+    #page-kalkulyator .kchoice { padding: 12px 10px !important; gap: 8px !important; }
+    #page-kalkulyator .kbtn { padding: 11px 16px !important; font-size: 14px !important; }
+    #page-kalkulyator .knav { flex-direction: column !important; gap: 8px !important; }
+    #page-kalkulyator .kbtn { width: 100% !important; }
+
+    /* ── Norma karta ── */
+    #d-norm-card div[style*="display:flex;justify-content:space-between"] {
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    #d-norm-card button { width: 100% !important; }
+
+    /* ── Floating FAB ── */
+    #prem-fab { right: 10px !important; bottom: 10px !important; gap: 6px !important; }
+    .prem-pop { right: 10px !important; width: calc(100vw - 20px) !important; }
+
+    /* ── Ombor sahifasi tabs (Gofra, Oq qog'oz va h.k.) ── */
+    div[style*="display:flex;gap:8px;flex-wrap:wrap;align-items:center"] {
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+    }
+
+    /* ── Min-width overrides (generic) ── */
+    div[style*="min-width:104px"], div[style*="min-width: 104px"],
+    div[style*="min-width:90px"], div[style*="min-width: 90px"],
+    div[style*="min-width:96px"], div[style*="min-width: 96px"],
+    div[style*="min-width:100px"], div[style*="min-width: 100px"],
+    div[style*="min-width:120px"], div[style*="min-width: 120px"] {
+      min-width: 0 !important;
+      flex: 1 1 80px !important;
+    }
+  }
+
+  /* ─── JUDA KICHIK EKRAN ≤380px ───────────────────────────────── */
+  @media (max-width: 380px) {
+    header h1 { font-size: 0.78rem !important; }
+    header img { height: 22px !important; }
+    .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+    .stat-card .value { font-size: 0.98rem !important; }
+    .fin-grid { grid-template-columns: 1fr 1fr !important; }
+    .fin-card .fc-value { font-size: 0.88rem !important; }
+    .card { padding: 11px 9px !important; }
+    main { padding: 8px 6px !important; }
+    nav button { padding: 8px 8px !important; font-size: 0.72rem !important; }
+    .btn { font-size: 0.76rem !important; padding: 8px 10px !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -6399,16 +6699,21 @@ function renderProdTab(tab) {
     var cardArrId  = 'ptab-arr-' + tab + '-' + po.id;
     // SARLAVHA (doim ko'rinib turadi, bosish bilan ochiladi/yopiladi)
     var cardHeader = '<div onclick="toggleProdCard(\'' + cardBodyId + '\',\'' + cardArrId + '\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:4px;padding:6px 12px;user-select:none">'
-      + '<div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;overflow:hidden">'
-        + '<span style="font-size:0.85rem;font-weight:800;color:#1a3c5e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">#' + (po.orderNum||'?') + ' — ' + po.client + '</span>'
-        + backBadgeSmall
-        + '<span style="font-size:0.66rem;background:#f4f6f9;color:#3a4655;border:1px solid #d5dde6;border-radius:4px;padding:1px 5px;font-weight:700;white-space:nowrap">' + (po.profil==='macro'?'Macro':'Micro') + '</span>'
-        + (po.format ? '<span style="font-size:0.66rem;background:#eaf1fc;color:#134A9E;border:1px solid #b8d2f4;border-radius:4px;padding:1px 6px;white-space:nowrap">📏 ' + po.format + '</span>' : '')
-        + (po.orderName ? '<span style="font-size:0.66rem;background:#efeaff;border:1px solid #c9b9f0;border-radius:4px;padding:1px 6px;color:#5b3fa0;font-weight:700;white-space:nowrap">📝 ' + po.orderName + '</span>' : '')
+      + '<div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1">'
+        + '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">'
+          + '<span style="font-size:0.85rem;font-weight:800;color:#1a3c5e">#' + (po.orderNum||'?') + ' — ' + po.client + '</span>'
+          + (po.fayl ? '<span style="font-size:0.66rem;background:#f0f6ff;color:#2456a4;border:1px solid #c5d8f6;border-radius:4px;padding:1px 6px">📄 ' + po.fayl + '</span>' : '')
+          + (po.orderName ? '<span style="font-size:0.66rem;background:#efeaff;border:1px solid #c9b9f0;border-radius:4px;padding:1px 6px;color:#5b3fa0;font-weight:700">📝 ' + po.orderName + '</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
+          + backBadgeSmall
+          + '<span style="font-size:0.64rem;background:#f4f6f9;color:#3a4655;border:1px solid #d5dde6;border-radius:4px;padding:1px 5px;font-weight:700">' + (po.profil==='macro'?'Macro':'Micro') + '</span>'
+          + (po.format ? '<span style="font-size:0.64rem;background:#eaf1fc;color:#134A9E;border:1px solid #b8d2f4;border-radius:4px;padding:1px 5px">📏 ' + po.format + '</span>' : '')
+        + '</div>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">'
+      + '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;padding-left:6px">'
         + (isDone
-            ? '<span style="font-size:0.72rem;background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:5px;padding:1px 7px;font-weight:800">✅ Tayyor</span>'
+            ? '<span style="font-size:0.72rem;background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:5px;padding:1px 7px;font-weight:800">✅</span>'
             : '<span style="font-size:0.72rem;background:#fff8e1;color:#a04000;border:1px solid #f9c74f;border-radius:5px;padding:1px 7px;font-weight:700">' + pct + '%</span>')
         + '<span id="' + cardArrId + '" style="font-size:0.72rem;color:#b0bac8">▼</span>'
       + '</div>'
@@ -19545,7 +19850,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.35';
+  var APP_VERSION = '1.38';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
