@@ -1709,6 +1709,14 @@
       if(el){ el.style.display='flex'; }
     }
   };
+  document.addEventListener('keydown',function(e){
+    var lock=document.getElementById('nls-pin-lock');
+    if(!lock||lock.style.display==='none'||lock.style.display==='') return;
+    var k=e.key;
+    if(/^[0-9]$/.test(k)){ e.preventDefault(); PIN.press(k); }
+    else if(k==='Backspace'||k==='Delete'){ e.preventDefault(); PIN.press('del'); }
+    else if(k==='Enter'){ e.preventDefault(); PIN.press('ok'); }
+  });
   function go(){ PIN.init(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go();
 })();
@@ -8264,6 +8272,15 @@ function pmCheck(){
 }
 function showPinMgrForgot(){ _pmVal=''; _pmState='forgot'; pmRender(); }
 function pmGoBack(){ _pmVal=''; _pmState='verify'; pmRender(); }
+document.addEventListener('keydown',function(e){
+  var mgr=document.getElementById('nls-pin-mgr');
+  if(!mgr||mgr.style.display!=='flex') return;
+  if(_pmState==='forgot') return;
+  var k=e.key;
+  if(/^[0-9]$/.test(k)){ e.preventDefault(); pmPress(k); }
+  else if(k==='Backspace'||k==='Delete'){ e.preventDefault(); pmPress('del'); }
+  else if(k==='Escape'){ e.preventDefault(); closePinMgr(); }
+});
 function pinMgrSendReq(){
   localStorage.setItem('karo_pin_req',JSON.stringify({pending:true,ts:Date.now()}));
   var rs=document.getElementById('pm-req-sent'); if(rs) rs.style.display='block';
@@ -20717,7 +20734,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.49';
+  var APP_VERSION = '1.50';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
