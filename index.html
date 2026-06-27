@@ -4559,6 +4559,32 @@
 <!-- SOZLAMALAR -->
 <div id="page-sozlamalar" class="page">
   <main>
+    <!-- PIN LOCK sozlamalari -->
+    <div class="card" style="margin-bottom:20px;max-width:420px">
+      <h2 style="margin:0 0 6px"><sn>H-PIN</sn>🔒 Kirish paroli (4 xonali kod)</h2>
+      <p style="font-size:0.82rem;color:#7a8fa8;margin:0 0 16px;line-height:1.5">Dastur ochilganda 4 xonali kod so'raladi. Bo'sh qoldirilsa — parol o'chiriladi.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Yangi parol (4 ta raqam)</label>
+          <input type="tel" id="pin-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+        </div>
+        <div>
+          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Tasdiqlash</label>
+          <input type="tel" id="pin-confirm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+        </div>
+        <div id="pin-soz-msg" style="min-height:18px;font-size:0.82rem;font-weight:700"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="flex:1;min-width:120px" onclick="savePinSoz()">💾 Saqlash</button>
+          <button class="btn btn-danger" style="flex:1;min-width:120px" onclick="clearPinSoz()">🗑 Parolni o'chirish</button>
+        </div>
+        <div id="pin-current-status" style="font-size:0.8rem;color:#7a8fa8"></div>
+      </div>
+    </div>
+
     <!-- 🎨 VIZUAL EFFEKTLAR — Premium Settings Panel -->
     <div class="card" style="margin-bottom:20px;max-width:680px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:2px">
@@ -4784,32 +4810,6 @@
     <div style="text-align:center;margin-top:20px">
       <button class="btn btn-primary" style="min-width:220px;font-size:1rem;padding:12px 32px" onclick="saveSozlamalar()">💾 Saqlash</button>
       <p id="soz-saved-msg" style="display:none;color:#217a4a;font-weight:700;margin-top:10px">✅ Narxlar saqlandi!</p>
-    </div>
-
-    <!-- PIN LOCK sozlamalari -->
-    <div class="card" style="margin-top:24px;max-width:420px">
-      <h2 style="margin:0 0 6px"><sn>H-PIN</sn>🔒 Kirish paroli (4 xonali kod)</h2>
-      <p style="font-size:0.82rem;color:#7a8fa8;margin:0 0 16px;line-height:1.5">Dastur ochilganda 4 xonali kod so'raladi. Bo'sh qoldirilsa — parol o'chiriladi.</p>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div>
-          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Yangi parol (4 ta raqam)</label>
-          <input type="tel" id="pin-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
-            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-        </div>
-        <div>
-          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Tasdiqlash</label>
-          <input type="tel" id="pin-confirm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
-            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
-        </div>
-        <div id="pin-soz-msg" style="min-height:18px;font-size:0.82rem;font-weight:700"></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" style="flex:1;min-width:120px" onclick="savePinSoz()">💾 Saqlash</button>
-          <button class="btn btn-danger" style="flex:1;min-width:120px" onclick="clearPinSoz()">🗑 Parolni o'chirish</button>
-        </div>
-        <div id="pin-current-status" style="font-size:0.8rem;color:#7a8fa8"></div>
-      </div>
     </div>
 
     <!-- Ma'lumotlarni tozalash (danger zone) -->
@@ -20549,7 +20549,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.45';
+  var APP_VERSION = '1.46';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
