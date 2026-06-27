@@ -1626,12 +1626,12 @@
 </script>
 
 <!-- PIN LOCK -->
-<div id="nls-pin-lock" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:radial-gradient(1200px 760px at 50% 38%,#1d3f7d 0%,#0c2350 48%,#07142e 100%);font-family:Segoe UI,sans-serif">
+<div id="nls-pin-lock" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:radial-gradient(1200px 760px at 50% 38%,#1d3f7d 0%,#0c2350 48%,#07142e 100%);font-family:Segoe UI,sans-serif;touch-action:none;overflow:hidden">
   <style>
     .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:transparent;transition:background .15s,border-color .15s}
     .pin-dot.pf{background:#79b0ff;border-color:#79b0ff}
     .pin-dot.pe{background:#ff6b6b;border-color:#ff6b6b}
-    .pin-key{width:68px;height:68px;box-sizing:border-box;border:1.5px solid rgba(255,255,255,0.15);border-radius:16px;background:rgba(255,255,255,0.09);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .1s;-webkit-tap-highlight-color:transparent}
+    .pin-key{width:68px;height:68px;box-sizing:border-box;border:1.5px solid rgba(255,255,255,0.15);border-radius:16px;background:rgba(255,255,255,0.09);color:#fff;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:manipulation;transition:background .1s,transform .1s;-webkit-tap-highlight-color:transparent}
     .pin-key:active{background:rgba(255,255,255,0.24);transform:scale(0.92)}
     @keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-11px)}40%{transform:translateX(11px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
     .pin-shake{animation:pinShake .42s ease}
@@ -20742,7 +20742,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.51';
+  var APP_VERSION = '1.52';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
