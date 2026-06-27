@@ -224,7 +224,7 @@
             var changed=false;
             if(p.eventType==='DELETE'){ var ok=p.old; if(ok&&ok.k) changed=applyRemote(ok.k, null, true); }
             else { var nw=p.new; if(nw&&nw.k) changed=applyRemote(nw.k, nw.v, false); }
-            if(changed){ showSyncNotice(); }
+            if(changed){ scheduleRerender(); }
           }catch(e){}
         })
         .subscribe(function(status){
@@ -256,7 +256,7 @@
         if(!r||r.error||!r.data||!r.data.length) return;
         var ts=r.data[0].updated_at||'';
         if(!_lastUpdatedAt){ _lastUpdatedAt=ts; return; }
-        if(ts>_lastUpdatedAt){ _lastUpdatedAt=ts; showSyncNotice(); }
+        if(ts>_lastUpdatedAt){ _lastUpdatedAt=ts; pullAll(); }
       }).catch(function(){});
     },3000);
   }
@@ -1618,6 +1618,95 @@
     function go(){ setTimeout(hide, 500); }
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', go); else go();
   })();
+</script>
+
+<!-- PIN LOCK -->
+<div id="nls-pin-lock" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:radial-gradient(1200px 760px at 50% 38%,#1d3f7d 0%,#0c2350 48%,#07142e 100%);font-family:Segoe UI,sans-serif">
+  <style>
+    .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:transparent;transition:background .15s,border-color .15s}
+    .pin-dot.pf{background:#79b0ff;border-color:#79b0ff}
+    .pin-dot.pe{background:#ff6b6b;border-color:#ff6b6b}
+    .pin-key{aspect-ratio:1;min-height:62px;border:1.5px solid rgba(255,255,255,0.15);border-radius:16px;background:rgba(255,255,255,0.09);color:#fff;font-size:1.5rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .1s;-webkit-tap-highlight-color:transparent}
+    .pin-key:active{background:rgba(255,255,255,0.24);transform:scale(0.92)}
+    @keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-11px)}40%{transform:translateX(11px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+    .pin-shake{animation:pinShake .42s ease}
+  </style>
+  <div style="text-align:center;color:#fff;width:100%;max-width:290px;padding:20px 16px">
+    <div style="font-size:2rem;margin-bottom:8px">🔒</div>
+    <div style="font-size:1rem;font-weight:800;letter-spacing:3px;margin-bottom:4px">NLS BOX</div>
+    <div style="font-size:0.8rem;color:#8aacda;margin-bottom:26px">Kirish kodini kiriting</div>
+    <div id="pin-dots" style="display:flex;justify-content:center;gap:20px;margin-bottom:10px">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div><div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div id="pin-err-msg" style="min-height:22px;font-size:0.79rem;color:#ff7b7b;font-weight:700;margin-bottom:18px"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:250px;margin:0 auto">
+      <button class="pin-key" onclick="PIN.press('1')">1</button>
+      <button class="pin-key" onclick="PIN.press('2')">2</button>
+      <button class="pin-key" onclick="PIN.press('3')">3</button>
+      <button class="pin-key" onclick="PIN.press('4')">4</button>
+      <button class="pin-key" onclick="PIN.press('5')">5</button>
+      <button class="pin-key" onclick="PIN.press('6')">6</button>
+      <button class="pin-key" onclick="PIN.press('7')">7</button>
+      <button class="pin-key" onclick="PIN.press('8')">8</button>
+      <button class="pin-key" onclick="PIN.press('9')">9</button>
+      <button class="pin-key" onclick="PIN.press('del')" style="font-size:1.1rem;color:#aac4e8">⌫</button>
+      <button class="pin-key" onclick="PIN.press('0')">0</button>
+      <button class="pin-key" onclick="PIN.press('ok')" style="background:rgba(79,150,255,0.22);border-color:rgba(79,150,255,0.55)">✓</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var PIN_KEY='karo_pin', PIN_SESSION='karo_pin_ok';
+  var _val='';
+  function getPin(){ return localStorage.getItem(PIN_KEY)||''; }
+  function updateDots(){
+    for(var i=0;i<4;i++){
+      var d=document.getElementById('pd'+i); if(!d) continue;
+      d.classList.remove('pf','pe');
+      if(i<_val.length) d.classList.add('pf');
+    }
+  }
+  function showErr(msg){
+    var e=document.getElementById('pin-err-msg'); if(e) e.textContent=msg;
+    var dots=document.getElementById('pin-dots');
+    if(dots){ dots.classList.add('pin-shake'); setTimeout(function(){ dots.classList.remove('pin-shake'); },450); }
+    for(var i=0;i<4;i++){ var d=document.getElementById('pd'+i); if(d){ d.classList.remove('pf'); d.classList.add('pe'); } }
+    setTimeout(function(){
+      _val=''; updateDots();
+      for(var i=0;i<4;i++){ var d=document.getElementById('pd'+i); if(d) d.classList.remove('pe'); }
+      var e2=document.getElementById('pin-err-msg'); if(e2) e2.textContent='';
+    },900);
+  }
+  function unlock(){
+    var el=document.getElementById('nls-pin-lock');
+    if(el){ el.style.opacity='0'; el.style.transition='opacity .35s ease'; setTimeout(function(){ el.style.display='none'; el.style.opacity=''; },380); }
+    try{ sessionStorage.setItem(PIN_SESSION,'1'); }catch(e){}
+  }
+  function check(){
+    var saved=getPin();
+    if(!saved||_val===saved){ unlock(); return; }
+    showErr('❌ Kod noto\'g\'ri — qayta kiriting');
+  }
+  window.PIN={
+    press:function(k){
+      var e=document.getElementById('pin-err-msg'); if(e) e.textContent='';
+      if(k==='del'){ _val=_val.slice(0,-1); updateDots(); return; }
+      if(k==='ok'){ if(_val.length===4) check(); return; }
+      if(_val.length>=4) return;
+      _val+=k; updateDots();
+      if(_val.length===4) setTimeout(check,130);
+    },
+    init:function(){
+      if(!getPin()) return;
+      if(sessionStorage.getItem(PIN_SESSION)==='1') return;
+      var el=document.getElementById('nls-pin-lock');
+      if(el){ el.style.display='flex'; }
+    }
+  };
+  function go(){ PIN.init(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go();
+})();
 </script>
 
 <!-- Skeleton splash — CSS o'zi yo'qotadi (animatsiya/reduced-motion bilan), JS shart emas -->
@@ -4697,6 +4786,32 @@
       <p id="soz-saved-msg" style="display:none;color:#217a4a;font-weight:700;margin-top:10px">✅ Narxlar saqlandi!</p>
     </div>
 
+    <!-- PIN LOCK sozlamalari -->
+    <div class="card" style="margin-top:24px;max-width:420px">
+      <h2 style="margin:0 0 6px"><sn>H-PIN</sn>🔒 Kirish paroli (4 xonali kod)</h2>
+      <p style="font-size:0.82rem;color:#7a8fa8;margin:0 0 16px;line-height:1.5">Dastur ochilganda 4 xonali kod so'raladi. Bo'sh qoldirilsa — parol o'chiriladi.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Yangi parol (4 ta raqam)</label>
+          <input type="tel" id="pin-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+        </div>
+        <div>
+          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Tasdiqlash</label>
+          <input type="tel" id="pin-confirm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••"
+            style="width:100%;padding:10px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:1.2rem;letter-spacing:8px;outline:none;box-sizing:border-box;text-align:center"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,4)">
+        </div>
+        <div id="pin-soz-msg" style="min-height:18px;font-size:0.82rem;font-weight:700"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="flex:1;min-width:120px" onclick="savePinSoz()">💾 Saqlash</button>
+          <button class="btn btn-danger" style="flex:1;min-width:120px" onclick="clearPinSoz()">🗑 Parolni o'chirish</button>
+        </div>
+        <div id="pin-current-status" style="font-size:0.8rem;color:#7a8fa8"></div>
+      </div>
+    </div>
+
     <!-- Ma'lumotlarni tozalash (danger zone) -->
     <div class="card" style="margin-top:28px;border:2px solid #f5b7b1;background:#fff8f7;max-width:580px;margin-left:auto;margin-right:auto">
       <h2 style="color:#922b21;border-color:#f5c6cb"><sn>H44</sn>🗑️ Ma'lumotlarni tozalash</h2>
@@ -6847,11 +6962,16 @@ function renderProdTab(tab) {
           + (po.format ? '<span style="font-size:0.64rem;background:#eaf1fc;color:#134A9E;border:1px solid #b8d2f4;border-radius:4px;padding:1px 5px">📏 ' + po.format + '</span>' : '')
         + '</div>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0;padding-left:6px">'
-        + (isDone
-            ? '<span style="font-size:0.72rem;background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:5px;padding:1px 7px;font-weight:800">✅</span>'
-            : '<span style="font-size:0.72rem;background:#fff8e1;color:#a04000;border:1px solid #f9c74f;border-radius:5px;padding:1px 7px;font-weight:700">' + pct + '%</span>')
-        + '<span id="' + cardArrId + '" style="font-size:0.72rem;color:#b0bac8">▼</span>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;padding-left:6px">'
+        + '<div style="display:flex;align-items:center;gap:5px">'
+          + (isDone
+              ? '<span style="font-size:0.72rem;background:#eafaf1;color:#1a8a50;border:1px solid #a9dfbf;border-radius:5px;padding:1px 7px;font-weight:800">✅</span>'
+              : '<span style="font-size:0.72rem;background:#fff8e1;color:#a04000;border:1px solid #f9c74f;border-radius:5px;padding:1px 7px;font-weight:700">' + pct + '%</span>')
+          + '<span id="' + cardArrId + '" style="font-size:0.72rem;color:#b0bac8">▼</span>'
+        + '</div>'
+        + (tab === 'kasherovka'
+            ? '<span style="font-size:0.7rem;background:#fff3e0;color:#7d4a00;border:1.5px solid #f0b429;border-radius:6px;padding:2px 8px;font-weight:800;white-space:nowrap">📦 Gofra: ' + (po.gofra||0).toLocaleString('uz-UZ') + ' list</span>'
+            : '')
       + '</div>'
     + '</div>'
     + '<div style="height:3px;background:#f0f4f8;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + barColor + ';transition:width 0.4s"></div></div>';
@@ -7976,6 +8096,27 @@ function getTieredPrice(sheets, type) {
   return Math.round(perSheet * sheets);
 }
 
+function savePinSoz() {
+  var n = (document.getElementById('pin-new')||{}).value||'';
+  var c = (document.getElementById('pin-confirm')||{}).value||'';
+  var msg = document.getElementById('pin-soz-msg');
+  function setMsg(t,col){ if(msg){msg.textContent=t;msg.style.color=col;} }
+  if(!n){ setMsg('⚠️ Parol bo\'sh — o\'chirish uchun "Parolni o\'chirish" tugmasini bosing','#a04000'); return; }
+  if(n.length!==4||!/^\d{4}$/.test(n)){ setMsg('⚠️ Faqat 4 ta raqam kiriting','#c0392b'); return; }
+  if(n!==c){ setMsg('❌ Parollar mos kelmadi','#c0392b'); return; }
+  localStorage.setItem('karo_pin', n);
+  setMsg('✅ Parol saqlandi! Keyingi kirishdan boshlab so\'raladi.','#1a6b3a');
+  if(document.getElementById('pin-new')) document.getElementById('pin-new').value='';
+  if(document.getElementById('pin-confirm')) document.getElementById('pin-confirm').value='';
+  var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔒 Hozirgi holat: parol o\'rnatilgan';
+}
+function clearPinSoz() {
+  if(!confirm('Kirish parolini o\'chirilsinmi? Keyingi kirishda kod so\'ralmaydi.')) return;
+  localStorage.removeItem('karo_pin');
+  var msg=document.getElementById('pin-soz-msg');
+  if(msg){msg.textContent='🔓 Parol o\'chirildi';msg.style.color='#7a8fa8';}
+  var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔓 Hozirgi holat: parol yo\'q';
+}
 function loadSozlamalarInputs() {
   var soz = getSozlamalar();
   var a1 = soz.a1 || PECHAT_DEFAULT_A1;
@@ -8005,6 +8146,8 @@ function loadSozlamalarInputs() {
   renderTable('a1-table-body', PECHAT_TIERS, PECHAT_TIER_LBLS, a1);
   renderTable('a2-table-body', PECHAT_TIERS, PECHAT_TIER_LBLS, a2);
   renderTable('a0-table-body', PECHAT_TIERS_A0, PECHAT_TIER_LBLS_A0, a0);
+  var st=document.getElementById('pin-current-status');
+  if(st) st.textContent = localStorage.getItem('karo_pin') ? '🔒 Hozirgi holat: parol o\'rnatilgan' : '🔓 Hozirgi holat: parol yo\'q';
 }
 
 function saveSozlamalar() {
@@ -20406,7 +20549,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.42';
+  var APP_VERSION = '1.45';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
