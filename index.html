@@ -65,7 +65,7 @@
   var SUPA_URL='https://yuhhdgjtynulzrbqvkqg.supabase.co';
   var SUPA_KEY='sb_publishable_k3cv4iXrqWFv0HLD1DPkQg_XexqCiQ5';
   var WS='nls', SYNC_RE=/^karo_/, FLAG='karoCloudSession', PENDING='karo_cloud_pending', SEEDED='__meta_seeded';
-  var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1, 'karo_my_token':1, 'karo_pin':1 };
+  var NO_SYNC={ 'karo_session':1, 'karo_cloud_pending':1, 'karo_my_token':1, 'karo_pin':1, 'karo_pin_timeout':1 };
   var _set=localStorage.setItem.bind(localStorage), _get=localStorage.getItem.bind(localStorage), _remove=localStorage.removeItem.bind(localStorage);
   var sb=null, ready=false, timers={};
   // ☁️ REALTIME holati
@@ -1670,9 +1670,10 @@
 </div>
 <script>
 (function(){
-  var PIN_KEY='karo_pin', PIN_SESSION='karo_pin_ok';
-  var _val='';
-  function getPin(){ return localStorage.getItem(PIN_KEY)||''; }
+  var PIN_KEY='karo_pin', PIN_SESSION='karo_pin_ok', TIMEOUT_KEY='karo_pin_timeout';
+  var _val='', _lockTimer=null;
+  function getPin(){ try{ return (window.Storage?Storage.prototype.getItem:localStorage.getItem).call(localStorage,PIN_KEY)||''; }catch(e){ return localStorage.getItem(PIN_KEY)||''; } }
+  function getPinMins(){ try{ return parseInt((window.Storage?Storage.prototype.getItem:localStorage.getItem).call(localStorage,TIMEOUT_KEY)||'0',10)||0; }catch(e){ return parseInt(localStorage.getItem(TIMEOUT_KEY)||'0',10)||0; } }
   function updateDots(){
     for(var i=0;i<4;i++){
       var d=document.getElementById('pd'+i); if(!d) continue;
@@ -1691,16 +1692,37 @@
       var e2=document.getElementById('pin-err-msg'); if(e2) e2.textContent='';
     },900);
   }
+  function lockNow(){
+    if(_lockTimer){ clearTimeout(_lockTimer); _lockTimer=null; }
+    if(!getPin()) return;
+    try{ sessionStorage.removeItem(PIN_SESSION); }catch(e){}
+    _val='';
+    var em=document.getElementById('pin-err-msg'); if(em) em.textContent='';
+    updateDots();
+    var el=document.getElementById('nls-pin-lock');
+    if(el){ el.style.opacity=''; el.style.display='flex'; }
+  }
+  function resetTimer(){
+    if(_lockTimer){ clearTimeout(_lockTimer); _lockTimer=null; }
+    var mins=getPinMins();
+    if(!mins||!getPin()) return;
+    try{ if(sessionStorage.getItem(PIN_SESSION)!=='1') return; }catch(e){}
+    _lockTimer=setTimeout(lockNow, mins*60*1000);
+  }
   function unlock(){
     var el=document.getElementById('nls-pin-lock');
     if(el){ el.style.opacity='0'; el.style.transition='opacity .35s ease'; setTimeout(function(){ el.style.display='none'; el.style.opacity=''; },380); }
     try{ sessionStorage.setItem(PIN_SESSION,'1'); }catch(e){}
+    resetTimer();
   }
   function check(){
     var saved=getPin();
     if(!saved||_val===saved){ unlock(); return; }
     showErr('❌ Kod noto\'g\'ri — qayta kiriting');
   }
+  ['mousemove','mousedown','keydown','touchstart','click'].forEach(function(ev){
+    document.addEventListener(ev,resetTimer,{passive:true,capture:true});
+  });
   window.PIN={
     press:function(k){
       var e=document.getElementById('pin-err-msg'); if(e) e.textContent='';
@@ -1712,10 +1734,11 @@
     },
     init:function(){
       if(!getPin()) return;
-      if(sessionStorage.getItem(PIN_SESSION)==='1') return;
+      if(sessionStorage.getItem(PIN_SESSION)==='1'){ resetTimer(); return; }
       var el=document.getElementById('nls-pin-lock');
       if(el){ el.style.display='flex'; }
-    }
+    },
+    resetTimer:resetTimer
   };
   document.addEventListener('keydown',function(e){
     var lock=document.getElementById('nls-pin-lock');
@@ -3013,6 +3036,7 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>Mavjud partiyaga qo'sh</th>
               <th>Kenglik (sm)</th>
               <th>Balandlik (sm)</th>
               <th>Gramaj (g/m²)</th>
@@ -4658,6 +4682,18 @@
           <button class="btn btn-danger" style="flex:1;min-width:120px" onclick="clearPinSoz()">🗑 Parolni o'chirish</button>
         </div>
         <div id="pin-current-status" style="font-size:0.8rem;color:#7a8fa8"></div>
+        <div style="margin-top:10px">
+          <label style="font-size:0.8rem;font-weight:700;color:#42536b">Avtomatik qulflash vaqti</label>
+          <select id="pin-timeout-sel" onchange="savePinTimeout()" style="width:100%;padding:9px 12px;margin-top:5px;border:1.5px solid #cdd8e6;border-radius:9px;font-size:14px;outline:none;box-sizing:border-box;color:#1a2a40;background:#f7faff">
+            <option value="0">O'chiriq (hech qachon)</option>
+            <option value="1">1 daqiqa</option>
+            <option value="2">2 daqiqa</option>
+            <option value="5">5 daqiqa</option>
+            <option value="10">10 daqiqa</option>
+            <option value="15">15 daqiqa</option>
+            <option value="30">30 daqiqa</option>
+          </select>
+        </div>
         <div id="pin-req-notice"></div>
       </div>
     </div>
@@ -8173,6 +8209,20 @@ function getTieredPrice(sheets, type) {
   return Math.round(perSheet * sheets);
 }
 
+function savePinTimeout(){
+  var sel=document.getElementById('pin-timeout-sel'); if(!sel) return;
+  var v=sel.value||'0';
+  try{ (window.Storage?Storage.prototype.setItem:localStorage.setItem).call(localStorage,'karo_pin_timeout',v); }catch(e){ localStorage.setItem('karo_pin_timeout',v); }
+  if(window.PIN&&PIN.resetTimer) PIN.resetTimer();
+}
+function loadPinTimeout(){
+  var sel=document.getElementById('pin-timeout-sel'); if(!sel) return;
+  var v; try{ v=(window.Storage?Storage.prototype.getItem:localStorage.getItem).call(localStorage,'karo_pin_timeout')||'0'; }catch(e){ v=localStorage.getItem('karo_pin_timeout')||'0'; }
+  sel.value=v;
+}
+function _pinRawSet(v){ try{ (window.Storage?Storage.prototype.setItem:localStorage.setItem).call(localStorage,'karo_pin',v); }catch(e){ try{ localStorage.setItem('karo_pin',v); }catch(e2){} } }
+function _pinRawRemove(){ try{ (window.Storage?Storage.prototype.removeItem:localStorage.removeItem).call(localStorage,'karo_pin'); }catch(e){ try{ localStorage.removeItem('karo_pin'); }catch(e2){} } }
+function _pinRawGet(){ try{ return (window.Storage?Storage.prototype.getItem:localStorage.getItem).call(localStorage,'karo_pin')||''; }catch(e){ return localStorage.getItem('karo_pin')||''; } }
 function savePinSoz() {
   var n = (document.getElementById('pin-new')||{}).value||'';
   var c = (document.getElementById('pin-confirm')||{}).value||'';
@@ -8181,7 +8231,8 @@ function savePinSoz() {
   if(!n){ setMsg('⚠️ Parol bo\'sh — o\'chirish uchun "Parolni o\'chirish" tugmasini bosing','#a04000'); return; }
   if(n.length!==4||!/^\d{4}$/.test(n)){ setMsg('⚠️ Faqat 4 ta raqam kiriting','#c0392b'); return; }
   if(n!==c){ setMsg('❌ Parollar mos kelmadi','#c0392b'); return; }
-  localStorage.setItem('karo_pin', n);
+  _pinRawSet(n);
+  if(_pinRawGet()!==n){ setMsg('❌ Saqlashda xato — qayta urinib ko\'ring','#c0392b'); return; }
   setMsg('✅ Parol saqlandi! Keyingi kirishdan boshlab so\'raladi.','#1a6b3a');
   if(document.getElementById('pin-new')) document.getElementById('pin-new').value='';
   if(document.getElementById('pin-confirm')) document.getElementById('pin-confirm').value='';
@@ -8189,7 +8240,7 @@ function savePinSoz() {
 }
 function clearPinSoz() {
   if(!confirm('Kirish parolini o\'chirilsinmi? Keyingi kirishda kod so\'ralmaydi.')) return;
-  localStorage.removeItem('karo_pin');
+  _pinRawRemove();
   var msg=document.getElementById('pin-soz-msg');
   if(msg){msg.textContent='🔓 Parol o\'chirildi';msg.style.color='#7a8fa8';}
   var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔓 Hozirgi holat: parol yo\'q';
@@ -8254,7 +8305,7 @@ function pmPress(k){
 }
 function pmCheck(){
   if(_pmState==='verify'){
-    var saved=localStorage.getItem('karo_pin')||'';
+    var saved=_pinRawGet();
     if(!saved||_pmVal===saved){
       _pmVal=''; _pmNew1=''; _pmState='new1'; pmRender();
     } else {
@@ -8265,8 +8316,9 @@ function pmCheck(){
     _pmNew1=_pmVal; _pmVal=''; _pmState='new2'; pmRender();
   } else if(_pmState==='new2'){
     if(_pmVal===_pmNew1){
-      localStorage.setItem('karo_pin',_pmNew1);
-      localStorage.removeItem('karo_pin_req');
+      _pinRawSet(_pmNew1);
+      try{ (window.Storage?Storage.prototype.removeItem:localStorage.removeItem).call(localStorage,'karo_pin_req'); }catch(e){ localStorage.removeItem('karo_pin_req'); }
+      if(_pinRawGet()!==_pmNew1){ pmShake(); pmSetErr('❌ Saqlashda xato — qayta urinib ko\'ring'); _pmVal=''; _pmNew1=''; setTimeout(function(){ _pmState='new1'; pmRender(); },1200); return; }
       pmSetErr('✅ Parol saqlandi!','#1B8A52');
       var st=document.getElementById('pin-current-status'); if(st) st.textContent='🔒 Hozirgi holat: parol o\'rnatilgan';
       var rn=document.getElementById('pin-req-notice'); if(rn) rn.innerHTML='';
@@ -8329,6 +8381,7 @@ function loadSozlamalarInputs() {
   renderTable('a0-table-body', PECHAT_TIERS_A0, PECHAT_TIER_LBLS_A0, a0);
   var st=document.getElementById('pin-current-status');
   if(st) st.textContent = localStorage.getItem('karo_pin') ? '🔒 Hozirgi holat: parol o\'rnatilgan' : '🔓 Hozirgi holat: parol yo\'q';
+  loadPinTimeout();
   var rn=document.getElementById('pin-req-notice');
   if(rn){
     var req=null; try{ req=JSON.parse(localStorage.getItem('karo_pin_req')||'null'); }catch(e){}
@@ -9515,6 +9568,40 @@ function updateRolonTotals() {
 
 // Dynamic kesilgan rows
 let kesilganRowId = 0;
+
+function buildExistingKesilganOptions() {
+  const items = (typeof oqKesilgan !== 'undefined' ? oqKesilgan : [])
+    .filter(r => r.status === 'mavjud' && (r.remaining || 0) > 0);
+  if (!items.length) return '<option value="">— Yangi partiya —</option>';
+  return '<option value="">— Yangi partiya —</option>' +
+    items.map(r => {
+      const lbl = (r.label || r.format || '?') + ' · ' + (r.supplier || '?') + ' · ' + (r.remaining || 0).toLocaleString('uz-UZ') + ' var';
+      return `<option value="${r.id}">${lbl}</option>`;
+    }).join('');
+}
+
+function onKslExistingChange(rid) {
+  const row = document.getElementById('krow-' + rid);
+  if (!row) return;
+  const sel = row.querySelector('.ksl-existing');
+  const id = sel ? sel.value : '';
+  const item = id ? (oqKesilgan || []).find(r => String(r.id) === String(id)) : null;
+  const lockStyle = 'background:#eef2f7;color:#666';
+  const unlockStyle = '';
+  [['ksl-w', 'width'], ['ksl-h', 'height'], ['ksl-gr', 'gramm']].forEach(([cls, field]) => {
+    const inp = row.querySelector('.' + cls);
+    if (!inp) return;
+    if (item) { inp.value = item[field] || 0; inp.disabled = true; inp.setAttribute('style', inp.getAttribute('style').replace(/background:[^;]+;?/g,'') + ';' + lockStyle); }
+    else { inp.disabled = false; inp.setAttribute('style', inp.getAttribute('style').replace(/background:[^;]+;?/g,'').replace(/color:[^;]+;?/g,'') + ';' + unlockStyle); }
+  });
+  const orgSel = row.querySelector('.ksl-origin');
+  if (orgSel) {
+    if (item) { orgSel.value = item.origin || 'Finskiy'; orgSel.disabled = true; orgSel.style.background = '#eef2f7'; }
+    else { orgSel.disabled = false; orgSel.style.background = ''; }
+  }
+  calcKesRow(rid);
+}
+
 function addKesilganRow() {
   kesilganRowId++;
   const rid = kesilganRowId;
@@ -9525,6 +9612,12 @@ function addKesilganRow() {
     `<input type="number" class="${cls}" data-rid="${rid}" placeholder="${ph}" value="0" min="0" style="width:${w}px;padding:6px 8px;border:1.5px solid #dce3ea;border-radius:6px;outline:none" oninput="calcKesRow(${rid})" ${extra}>`;
   tr.innerHTML = `
     <td style="font-weight:600;color:#1a3c5e">${tbody.rows.length + 1}</td>
+    <td>
+      <select class="ksl-existing" data-rid="${rid}" onchange="onKslExistingChange(${rid})"
+        style="padding:5px 7px;border:1.5px solid #dce3ea;border-radius:6px;outline:none;font-size:0.8rem;max-width:170px;background:#f9fafb">
+        ${buildExistingKesilganOptions()}
+      </select>
+    </td>
     <td>${inp('ksl-w','62',60)}</td>
     <td>${inp('ksl-h','72',60)}</td>
     <td>${inp('ksl-gr','170',60)}</td>
@@ -9637,6 +9730,7 @@ function savePrixod() {
     const rows = document.querySelectorAll('#kesilgan-rows tr');
     if (!rows.length) { alert('Kamida 1 ta partiya kiriting!'); return; }
     rows.forEach(tr => {
+      const existingId = tr.querySelector('.ksl-existing')?.value || '';
       const w     = parseFloat(tr.querySelector('.ksl-w')?.value)   || 0;
       const h     = parseFloat(tr.querySelector('.ksl-h')?.value)   || 0;
       const gr    = parseFloat(tr.querySelector('.ksl-gr')?.value)  || 0;
@@ -9654,6 +9748,22 @@ function savePrixod() {
           return;
         }
         const calcKg = parseFloat((w * h * gr * qty / 10000000).toFixed(2));
+        // Mavjud partiyaga qo'shish rejimi
+        if (existingId) {
+          const existing = oqKesilgan.find(r => String(r.id) === String(existingId));
+          if (existing) {
+            existing.qty = (existing.qty || 0) + qty;
+            existing.remaining = (existing.remaining || 0) + qty;
+            existing.calcKg = parseFloat(((existing.calcKg || 0) + calcKg).toFixed(2));
+            existing.calcKgRemaining = parseFloat(((existing.calcKgRemaining || 0) + calcKg).toFixed(2));
+            existing.totalSum = (existing.totalSum || 0) + rowSum;
+            existing.perKg = existing.calcKg > 0 ? Math.round(existing.totalSum / existing.calcKg) : 0;
+            if (pechatPV > 0) existing.pechatSum = (existing.pechatSum || 0) + pechatPV;
+            createdItems.push(existing);
+            count++; totalQty += calcKg;
+          }
+          return;
+        }
         const perKg  = calcKg > 0 ? Math.round(rowSum / calcKg) : 0;
         const fmt    = `${w}×${h}×${gr}`;
         var keItem = {
@@ -20742,7 +20852,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.52';
+  var APP_VERSION = '1.55';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
