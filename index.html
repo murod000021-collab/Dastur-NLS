@@ -96,13 +96,13 @@
   function boot(){
     try{ if(!sb && window.supabase && window.supabase.createClient){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); window.__SUPA=sb; } }catch(e){}
     if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
-    if(sessionStorage.getItem(FLAG)==='1'){ ready=true; chipInit(); flush(); startRealtime(); startPollFallback(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
+    if(_get(FLAG)===’1’){ ready=true; chipInit(); flush(); startRealtime(); startPollFallback(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
     sb.auth.getSession().then(function(r){
       var s=r&&r.data?r.data.session:null;
       rememberUser(s);
       if(s) sync();
       else if(navigator.onLine) showLogin();
-      else { warn('Internet yo’q — offline'); ready=true; }
+      else { warn(‘Internet yo’q — offline’); ready=true; }
     }).catch(function(){ if(navigator.onLine) showLogin(); else ready=true; });
   }
 
@@ -124,7 +124,7 @@
         rows.forEach(function(x){ if(String(x.k).indexOf('__meta')===0) return; cloudKeys[x.k]=1; try{ _set(x.k, x.v==null?'':String(x.v)); }catch(e){} });
         // Bulutda yo'q karo_* kalitlarni mahalliydan ham o'chiramiz (bulut = yagona manba)
         for(var ri=localStorage.length-1;ri>=0;ri--){ var rk=localStorage.key(ri); if(rk&&SYNC_RE.test(rk)&&!NO_SYNC[rk]&&!cloudKeys[rk]&&pl.indexOf(rk)<0){ try{ _remove(rk); }catch(e){} } }
-        sessionStorage.setItem(FLAG,'1'); karoReload();
+        _set(FLAG,'1'); karoReload();
       });
     }).catch(function(e){ warn('Bulutga ulanmadi — offline (oxirgi nusxa)'); ready=true; });
   }
@@ -142,7 +142,7 @@
         else { alert('Xato: '+r.error.message); if(b){b.disabled=false;b.textContent='☁️ Bulutga yuklash';} }
         return;
       }
-      _set(PENDING,'{}'); sessionStorage.setItem(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime(); startPollFallback();
+      _set(PENDING,'{}'); _set(FLAG,'1'); ready=true; rmSeed(); chipInit(); startRealtime(); startPollFallback();
       if(auto){ chip('ok'); } else { alert('✅ '+(rows.length-1)+" ta ma'lumot bulutga yuklandi!"); }
     }).catch(function(e){
       if(auto){ ready=true; warn('Bulutga yozilmadi — internet yoki Supabase SQL ni tekshiring'); }
@@ -302,7 +302,7 @@
     var c=document.createElement('div'); c.id='cloud-chip';
     c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
     c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish';
-    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ sessionStorage.removeItem(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
+    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
   function chipRest(){ var c=document.getElementById('cloud-chip'); if(!c) return; if(rtOk){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish'; } else { c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; } }
@@ -1856,7 +1856,7 @@
   <button onclick="showPage('chempionat',this)"><sn>N14b</sn>⚽ Jahon chempionati</button>
   <div style="flex:1"></div>
   <button onclick="showPage('trash',this)" id="nav-trash"><sn>N15</sn>🗑 O'chirilgan buyurtmalar</button>
-  <button onclick="showPinMgr()"><sn>N15b</sn>🔒 PIN</button>
+  <button onclick="showPage('pin',this)" id="nav-pin"><sn>N15b</sn>🔒 PIN</button>
   <button onclick="showPage('sozlamalar',this)"><sn>N16</sn>⚙️ Sozlamalar</button>
 </nav>
 
@@ -4630,37 +4630,9 @@
   </div>
 </div>
 
-<!-- KALKULYATOR -->
-<div id="page-kalkulyator" class="page">
-  <div style="max-width:900px;margin:0 auto">
-    <div class="kstep-bar">
-      <span class="ktag" id="kstepTag">1 / 12 — Buyurtma</span>
-      <button class="kbtnlink" id="krestartBtn" onclick="kResetAll()">↺ Yangidan boshlash</button>
-    </div>
-    <div class="ksteps" id="kdots"></div>
-    <div id="kapp"></div>
-    <div id="kfootTxt" style="margin-top:12px;text-align:center;font-size:12px;color:#888">Hisob-kitob 12 ta qog'oz varianti bo'yicha.</div>
-  </div>
-</div>
-
-<!-- ⚽ JAHON CHEMPIONATI — futbol natijalari (sport-express.ru) -->
-<div id="page-chempionat" class="page">
-  <div class="card" style="max-width:1150px;margin:0 auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
-      <h2 style="margin:0">⚽ Jahon chempionati 2026 — natijalar va turnir jadvali</h2>
-      <a href="https://www.sport-express.ru/football/L/world/tables/2026/" target="_blank" rel="noopener noreferrer" style="padding:9px 18px;border-radius:9px;background:#27ae60;color:#fff;font-weight:800;text-decoration:none;white-space:nowrap">🔗 Yangi oynada ochish</a>
-    </div>
-    <p style="font-size:0.82rem;color:#888;margin:0 0 12px">Manba: <b>sport-express.ru</b>. Agar natijalar quyida ko'rinmasa (sayt himoyasi sabab bo'sh qolsa), yuqoridagi <b>«🔗 Yangi oynada ochish»</b> tugmasini bosing.</p>
-    <div style="border:1.5px solid #dce3ea;border-radius:12px;overflow:hidden;background:#fff">
-      <iframe id="chmp-frame" data-src="https://www.sport-express.ru/football/L/world/tables/2026/" title="Jahon chempionati 2026 natijalari" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:78vh;min-height:520px;border:0;display:block"></iframe>
-    </div>
-  </div>
-</div>
-
-<!-- SOZLAMALAR -->
-<div id="page-sozlamalar" class="page">
+<!-- PIN SOZLAMALARI -->
+<div id="page-pin" class="page">
   <main>
-    <!-- PIN LOCK sozlamalari -->
     <div class="card" style="margin-bottom:20px;max-width:420px">
       <h2 style="margin:0 0 6px"><sn>H-PIN</sn>🔒 Kirish paroli (4 xonali kod)</h2>
       <p style="font-size:0.82rem;color:#7a8fa8;margin:0 0 16px;line-height:1.5">Dastur ochilganda 4 xonali kod so'raladi. Bo'sh qoldirilsa — parol o'chiriladi.</p>
@@ -4698,7 +4670,39 @@
         <div id="pin-req-notice"></div>
       </div>
     </div>
+  </main>
+</div>
 
+<!-- KALKULYATOR -->
+<div id="page-kalkulyator" class="page">
+  <div style="max-width:900px;margin:0 auto">
+    <div class="kstep-bar">
+      <span class="ktag" id="kstepTag">1 / 12 — Buyurtma</span>
+      <button class="kbtnlink" id="krestartBtn" onclick="kResetAll()">↺ Yangidan boshlash</button>
+    </div>
+    <div class="ksteps" id="kdots"></div>
+    <div id="kapp"></div>
+    <div id="kfootTxt" style="margin-top:12px;text-align:center;font-size:12px;color:#888">Hisob-kitob 12 ta qog'oz varianti bo'yicha.</div>
+  </div>
+</div>
+
+<!-- ⚽ JAHON CHEMPIONATI — futbol natijalari (sport-express.ru) -->
+<div id="page-chempionat" class="page">
+  <div class="card" style="max-width:1150px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <h2 style="margin:0">⚽ Jahon chempionati 2026 — natijalar va turnir jadvali</h2>
+      <a href="https://www.sport-express.ru/football/L/world/tables/2026/" target="_blank" rel="noopener noreferrer" style="padding:9px 18px;border-radius:9px;background:#27ae60;color:#fff;font-weight:800;text-decoration:none;white-space:nowrap">🔗 Yangi oynada ochish</a>
+    </div>
+    <p style="font-size:0.82rem;color:#888;margin:0 0 12px">Manba: <b>sport-express.ru</b>. Agar natijalar quyida ko'rinmasa (sayt himoyasi sabab bo'sh qolsa), yuqoridagi <b>«🔗 Yangi oynada ochish»</b> tugmasini bosing.</p>
+    <div style="border:1.5px solid #dce3ea;border-radius:12px;overflow:hidden;background:#fff">
+      <iframe id="chmp-frame" data-src="https://www.sport-express.ru/football/L/world/tables/2026/" title="Jahon chempionati 2026 natijalari" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:78vh;min-height:520px;border:0;display:block"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- SOZLAMALAR -->
+<div id="page-sozlamalar" class="page">
+  <main>
     <!-- 🎨 VIZUAL EFFEKTLAR — Premium Settings Panel -->
     <div class="card" style="margin-bottom:20px;max-width:680px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:2px">
@@ -5561,6 +5565,7 @@ function showPage(id, btn) {
   if (id === 'chempionat') { var _cf=document.getElementById('chmp-frame'); if(_cf && !_cf.src) _cf.src=_cf.getAttribute('data-src'); }
   if (id === 'trash') renderTrash();
   if (id === 'sozlamalar') { loadSozlamalarInputs(); if (typeof renderPurgeOptions === 'function') renderPurgeOptions(); if (window.FX && FX.syncUI) FX.syncUI(); }
+  if (id === 'pin') { loadPinPage(); }
 }
 
 // ===== KAROBKA TURI DROPDOWN =====
@@ -8351,6 +8356,27 @@ function pinMgrCloseReq(){
   var el=document.getElementById('pin-req-notice'); if(el) el.innerHTML='';
 }
 
+function loadPinPage() {
+  var st = document.getElementById('pin-current-status');
+  if (st) st.textContent = localStorage.getItem('karo_pin') ? '🔒 Hozirgi holat: parol o\'rnatilgan' : '🔓 Hozirgi holat: parol yo\'q';
+  loadPinTimeout();
+  var rn = document.getElementById('pin-req-notice');
+  if (rn) {
+    var req = null; try { req = JSON.parse(localStorage.getItem('karo_pin_req') || 'null'); } catch(e) {}
+    if (req && req.pending) {
+      var dt = req.ts ? new Date(req.ts).toLocaleString('uz-UZ') : '';
+      rn.innerHTML = '<div style="margin-top:12px;padding:10px 14px;background:#fff3e0;border:1.5px solid #f0b429;border-radius:9px;font-size:0.82rem">'
+        + '<b style="color:#7d4a00">⚠️ PIN tiklash so\'rovi bor</b>' + (dt ? ' <span style="color:#b07a00;font-weight:400">(' + dt + ')</span>' : '') + '<br>'
+        + '<span style="color:#7d4a00">Yangi parol o\'rnating (yuqoridagi formadan) va "Saqlash" ni bosing.</span>'
+        + ' <button onclick="pinMgrCloseReq()" style="margin-top:8px;display:block;background:#f0b429;border:none;border-radius:6px;padding:4px 12px;font-weight:700;cursor:pointer;color:#3d2a00">✅ Bajarildi — zaprosni yoping</button>'
+        + '</div>';
+    } else { rn.innerHTML = ''; }
+  }
+  var inp = document.getElementById('pin-new'); if (inp) inp.value = '';
+  var conf = document.getElementById('pin-confirm'); if (conf) conf.value = '';
+  var msg = document.getElementById('pin-soz-msg'); if (msg) msg.textContent = '';
+}
+
 function loadSozlamalarInputs() {
   var soz = getSozlamalar();
   var a1 = soz.a1 || PECHAT_DEFAULT_A1;
@@ -8380,21 +8406,6 @@ function loadSozlamalarInputs() {
   renderTable('a1-table-body', PECHAT_TIERS, PECHAT_TIER_LBLS, a1);
   renderTable('a2-table-body', PECHAT_TIERS, PECHAT_TIER_LBLS, a2);
   renderTable('a0-table-body', PECHAT_TIERS_A0, PECHAT_TIER_LBLS_A0, a0);
-  var st=document.getElementById('pin-current-status');
-  if(st) st.textContent = localStorage.getItem('karo_pin') ? '🔒 Hozirgi holat: parol o\'rnatilgan' : '🔓 Hozirgi holat: parol yo\'q';
-  loadPinTimeout();
-  var rn=document.getElementById('pin-req-notice');
-  if(rn){
-    var req=null; try{ req=JSON.parse(localStorage.getItem('karo_pin_req')||'null'); }catch(e){}
-    if(req&&req.pending){
-      var dt=req.ts ? new Date(req.ts).toLocaleString('uz-UZ') : '';
-      rn.innerHTML='<div style="margin-top:12px;padding:10px 14px;background:#fff3e0;border:1.5px solid #f0b429;border-radius:9px;font-size:0.82rem">'
-        +'<b style="color:#7d4a00">⚠️ PIN tiklash so\'rovi bor</b>'+(dt?' <span style="color:#b07a00;font-weight:400">('+dt+')</span>':'')+'<br>'
-        +'<span style="color:#7d4a00">Yangi parol o\'rnating (yuqoridagi formadan) va "Saqlash" ni bosing.</span>'
-        +' <button onclick="pinMgrCloseReq()" style="margin-top:8px;display:block;background:#f0b429;border:none;border-radius:6px;padding:4px 12px;font-weight:700;cursor:pointer;color:#3d2a00">✅ Bajarildi — zaprosni yoping</button>'
-        +'</div>';
-    } else { rn.innerHTML=''; }
-  }
 }
 
 function saveSozlamalar() {
@@ -20869,7 +20880,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.55';
+  var APP_VERSION = '1.57';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
