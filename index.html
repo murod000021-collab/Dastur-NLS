@@ -3037,6 +3037,7 @@
             <tr>
               <th>#</th>
               <th>Mavjud partiyaga qo'sh</th>
+              <th>Yetkazuvchi</th>
               <th>Kenglik (sm)</th>
               <th>Balandlik (sm)</th>
               <th>Gramaj (g/m²)</th>
@@ -9618,6 +9619,9 @@ function addKesilganRow() {
         ${buildExistingKesilganOptions()}
       </select>
     </td>
+    <td><input type="text" class="ksl-supplier" data-rid="${rid}" placeholder="Yetkazuvchi nomi"
+      value="${(document.getElementById('w-supplier')||{}).value||''}"
+      style="width:130px;padding:6px 8px;border:1.5px solid #dce3ea;border-radius:6px;outline:none;font-size:0.85rem"></td>
     <td>${inp('ksl-w','62',60)}</td>
     <td>${inp('ksl-h','72',60)}</td>
     <td>${inp('ksl-gr','170',60)}</td>
@@ -9725,12 +9729,15 @@ function savePrixod() {
 
   const gramm = parseFloat(document.getElementById('w-gramm').value) || 120;
   var createdItems = [];
+  // per-row: { supplier, sum, kg } — qarz guruhlanishi uchun
+  var rowDebts = [];
 
   if (matType === 'oq-kesilgan') {
     const rows = document.querySelectorAll('#kesilgan-rows tr');
     if (!rows.length) { alert('Kamida 1 ta partiya kiriting!'); return; }
     rows.forEach(tr => {
       const existingId = tr.querySelector('.ksl-existing')?.value || '';
+      const rowSupplier = (tr.querySelector('.ksl-supplier')?.value || '').trim() || supplier;
       const w     = parseFloat(tr.querySelector('.ksl-w')?.value)   || 0;
       const h     = parseFloat(tr.querySelector('.ksl-h')?.value)   || 0;
       const gr    = parseFloat(tr.querySelector('.ksl-gr')?.value)  || 0;
@@ -9761,13 +9768,14 @@ function savePrixod() {
             if (pechatPV > 0) existing.pechatSum = (existing.pechatSum || 0) + pechatPV;
             createdItems.push(existing);
             count++; totalQty += calcKg;
+            if (rowSum > 0 && !isLeftover) rowDebts.push({ sup: rowSupplier, sum: rowSum, kg: calcKg });
           }
           return;
         }
         const perKg  = calcKg > 0 ? Math.round(rowSum / calcKg) : 0;
         const fmt    = `${w}×${h}×${gr}`;
         var keItem = {
-          id: Date.now() + Math.random(), date, supplier, fayl,
+          id: Date.now() + Math.random(), date, supplier: rowSupplier, fayl,
           format: fmt, origin: org, label: `${fmt} (${org})`,
           gramm: gr, width: w, height: h,
           qty, remaining: qty,
@@ -9779,6 +9787,7 @@ function savePrixod() {
         oqKesilgan.push(keItem);
         createdItems.push(keItem);
         count++; totalQty += calcKg;
+        if (rowSum > 0 && !isLeftover) rowDebts.push({ sup: rowSupplier, sum: rowSum, kg: calcKg });
       }
     });
   } else {
@@ -9804,24 +9813,32 @@ function savePrixod() {
   arrivals.unshift({ id: Date.now(), date, supplier, fayl, matType, matLabel, count, totalQty: totalQty.toFixed(1), note });
 
   // Summa hisoblanadi (Yetkazuvchi qarzi uchun; Kirim Chiqimga chiqim QO'LDA yoziladi)
-  let xarajatAmount = 0;
   if (matType === 'oq-kesilgan') {
-    document.querySelectorAll('#kesilgan-rows tr').forEach(tr => {
-      xarajatAmount += parseFloat(tr.querySelector('.ksl-sum')?.value) || 0;
-    });
+    if (rowDebts.length > 0 && !isLeftover) {
+      // Har bir yetkazuvchi uchun alohida qarz yozuvi
+      var bySupplier = {};
+      rowDebts.forEach(function(rd) {
+        if (!bySupplier[rd.sup]) bySupplier[rd.sup] = { sum: 0, kg: 0 };
+        bySupplier[rd.sup].sum += rd.sum;
+        bySupplier[rd.sup].kg  += rd.kg;
+      });
+      Object.keys(bySupplier).forEach(function(sup, idx) {
+        var d = bySupplier[sup];
+        var perKgD = d.kg > 0 ? Math.round(d.sum / d.kg) : 0;
+        yetqarzlar.unshift({ id: Date.now() + 2 + idx, date, supplier: sup, type: 'qarz', matType: matLabel, amount: Math.round(d.sum), kg: parseFloat(d.kg.toFixed(2)), perKg: perKgD, detail: count + ' ta partiya', note: matLabel + (fayl ? ' · ' + fayl : '') + (note ? ' · ' + note : '') });
+      });
+      saveYetqarz();
+    }
   } else {
-    xarajatAmount = parseFloat(totalQty.toFixed(2)) * kgPrice;
-  }
-  if (xarajatAmount > 0 && !isLeftover) {
-    var yqKg = parseFloat(totalQty) || 0;
-    var yqPerKg = matType === 'oq-kesilgan' ? (yqKg > 0 ? Math.round(xarajatAmount / yqKg) : 0) : kgPrice;
-    var yqDetail = matType === 'oq-kesilgan'
-      ? count + ' ta partiya'
-      : count + ' rulon' + (prixodFormats.length ? ' (' + prixodFormats.join(', ') + ' sm)' : '');
-    var debtId = Date.now()+2;
-    yetqarzlar.unshift({ id: debtId, date, supplier, type: 'qarz', matType: matLabel, amount: Math.round(xarajatAmount), kg: yqKg, perKg: yqPerKg, detail: yqDetail, note: matLabel + (fayl ? ' · ' + fayl : '') + (note ? ' · ' + note : '') });
-    createdItems.forEach(function(it){ it.debtId = debtId; });
-    saveYetqarz();
+    var xarajatAmount = parseFloat(totalQty.toFixed(2)) * kgPrice;
+    if (xarajatAmount > 0 && !isLeftover) {
+      var yqKg = parseFloat(totalQty) || 0;
+      var yqDetail = count + ' rulon' + (prixodFormats.length ? ' (' + prixodFormats.join(', ') + ' sm)' : '');
+      var debtId = Date.now()+2;
+      yetqarzlar.unshift({ id: debtId, date, supplier, type: 'qarz', matType: matLabel, amount: Math.round(xarajatAmount), kg: yqKg, perKg: kgPrice, detail: yqDetail, note: matLabel + (fayl ? ' · ' + fayl : '') + (note ? ' · ' + note : '') });
+      createdItems.forEach(function(it){ it.debtId = debtId; });
+      saveYetqarz();
+    }
   }
 
   saveW();
