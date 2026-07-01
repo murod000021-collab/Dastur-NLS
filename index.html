@@ -20490,7 +20490,7 @@ updateProdBadge();
       if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; if(!rem){ localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); } return fail("Login yoki parol noto'g'ri"); }
       if(rem){ localStorage.setItem('karo_rem_login',lv); localStorage.setItem('karo_rem_pass',pv); }
       else { localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); }
-      var nm=u.name; setSessionId(u.id); closeOverlay(); applyPermissions(); renderUserList();
+      var nm=u.name; setSessionId(u.id); registerDeviceSession(u.id); closeOverlay(); applyPermissions(); renderUserList();
       miniToast('Xush kelibsiz, '+nm);
     }
     var btn=document.getElementById('al-submit'); if(btn) btn.onclick=sub;
@@ -20947,7 +20947,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.71';
+  var APP_VERSION = '1.72';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
