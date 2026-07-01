@@ -98,13 +98,13 @@
   function boot(){
     try{ if(!sb && window.supabase && window.supabase.createClient){ sb=window.supabase.createClient(SUPA_URL,SUPA_KEY); window.__SUPA=sb; } }catch(e){}
     if(!sb){ warn('Supabase yuklanmadi — offline'); ready=true; return; }
-    if(_get(FLAG)==='1'){ ready=true; chipInit(); flush(); startRealtime(); startPollFallback(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
+    if(_get(FLAG)===’1’){ ready=true; chipInit(); flush(); startRealtime(); startPollFallback(); pullAll(true); try{ sb.auth.getSession().then(function(r){ rememberUser(r&&r.data?r.data.session:null); }); }catch(e){} return; }
     sb.auth.getSession().then(function(r){
       var s=r&&r.data?r.data.session:null;
       rememberUser(s);
       if(s) sync();
       else if(navigator.onLine) showLogin();
-      else { warn('Internet yo’q — offline'); ready=true; }
+      else { warn(‘Internet yo’q — offline’); ready=true; }
     }).catch(function(){ if(navigator.onLine) showLogin(); else ready=true; });
   }
 
@@ -21061,7 +21061,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.77';
+  var APP_VERSION = '1.78';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
