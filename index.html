@@ -302,7 +302,7 @@
   function chipInit(){
     if(document.getElementById('cloud-chip')) return;
     var c=document.createElement('div'); c.id='cloud-chip';
-    c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#f0f4f8;border:1px solid #c8d5e3;color:#556677;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
+    c.style.cssText='position:fixed;right:10px;bottom:72px;z-index:100000;background:#f0f4f8;border:1px solid #c8d5e3;color:#556677;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
     c.textContent='☁️ Ulanmoqda...'; c.title='Bulutga ulanmoqda';
     c.onclick=function(){ if(window.PIN&&window.PIN.lock&&localStorage.getItem('karo_pin')){ window.PIN.lock(); } else if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
@@ -21182,7 +21182,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.80';
+  var APP_VERSION = '1.81';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
