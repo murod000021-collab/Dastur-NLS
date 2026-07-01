@@ -1858,7 +1858,7 @@
   <button onclick="showPage('trash',this)" id="nav-trash"><sn>N15</sn>🗑 O'chirilgan buyurtmalar</button>
   <button onclick="showPage('pin',this)" id="nav-pin"><sn>N15b</sn>🔒 PIN</button>
   <button onclick="showPage('sozlamalar',this)"><sn>N16</sn>⚙️ Sozlamalar</button>
-  <button id="nav-logout-btn" style="display:none;color:#c0392b;border-bottom-color:transparent" onclick="if(window.AUTH)AUTH.logout()">🚪 Chiqish</button>
+  <button id="nav-logout-btn" style="color:#c0392b;border-bottom-color:transparent" onclick="if(window.AUTH)AUTH.logout()">🚪 Chiqish</button>
 </nav>
 
 <main>
@@ -20539,9 +20539,7 @@ updateProdBadge();
 
   /* ---------- header chip + chiqish ---------- */
   function renderUserBox(){
-    var navBtn = document.getElementById('nav-logout-btn');
     var u = currentUser();
-    if(navBtn) navBtn.style.display = u ? '' : 'none';
     var host = document.querySelector('header');
     if(!host) return;
     var box = document.getElementById('auth-userbox');
@@ -20882,7 +20880,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.59';
+  var APP_VERSION = '1.60';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
