@@ -20459,14 +20459,31 @@ updateProdBadge();
   function openLogin(){
     ensureOverlay();
     pinBuf=''; pinUser=null;
-    setTitle('Tizimga kirish','Hisobingizni tanlang');
-    var us = loadUsers();
-    var html = '<div class="auth-users">' + us.map(function(u){
-      var letter = (u.name||'?').trim().charAt(0).toUpperCase();
-      var rl = u.role==='admin' ? 'Admin' : (u.role==='ish_boshqaruvchi' ? 'Ish boshqaruvchi' : 'Xodim');
-      return '<button class="auth-user" data-auth="pick" data-id="'+u.id+'"><span class="av">'+esc(letter)+'</span><span class="meta"><span class="nm">'+esc(u.name)+'</span><span class="rl">'+rl+'</span></span></button>';
-    }).join('') + '</div>';
-    setBody(html);
+    setTitle('Tizimga kirish','Login va parolni kiriting');
+    setBody(
+      '<div class="auth-form">'+
+        '<label>Login<input id="al-login" autocomplete="off" placeholder="loginni kiriting" spellcheck="false"></label>'+
+        '<label>Parol<input type="password" id="al-pass" autocomplete="off" placeholder="parolni kiriting"></label>'+
+        '<div class="auth-err" id="al-err"></div>'+
+        '<button class="auth-primary" id="al-submit">Kirish</button>'+
+      '</div>'
+    );
+    function sub(){
+      var lv=(document.getElementById('al-login')||{value:''}).value.trim();
+      var pv=(document.getElementById('al-pass')||{value:''}).value;
+      var errEl=document.getElementById('al-err');
+      function fail(m){ if(errEl) errEl.textContent=m; var box=document.querySelector('#auth-overlay .auth-box'); if(box){ box.classList.remove('auth-shake'); void box.offsetWidth; box.classList.add('auth-shake'); } }
+      if(!lv) return fail('Login kiriting');
+      if(!pv) return fail('Parol kiriting');
+      var us=loadUsers();
+      var u=us.filter(function(x){ return (x.login||x.email||'').toLowerCase()===lv.toLowerCase(); })[0];
+      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; return fail("Login yoki parol noto'g'ri"); }
+      var nm=u.name; setSessionId(u.id); closeOverlay(); applyPermissions(); renderUserList();
+      miniToast('Xush kelibsiz, '+nm);
+    }
+    var btn=document.getElementById('al-submit'); if(btn) btn.onclick=sub;
+    var pw=document.getElementById('al-pass'); if(pw) pw.addEventListener('keydown',function(e){ if(e.key==='Enter') sub(); });
+    var lg=document.getElementById('al-login'); if(lg){ lg.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var p=document.getElementById('al-pass'); if(p) p.focus(); } }); setTimeout(function(){ try{lg.focus();}catch(e){} },50); }
   }
 
   function selectUser(id){
@@ -20653,15 +20670,15 @@ updateProdBadge();
             '<div class="auth-hint">Bosqich belgilasangiz «🏭 Ishlab chiqarish» avtomat ochiladi va xodim <b>faqat o\'sha bosqich(lar)ni</b> ko\'radi (boshqa bosqichlar va «tasdiq kutilayotgan zakazlar» ko\'rinmaydi). Har xil xodimga har xil bosqich bering. Hech bosqich belgilanmasa — barcha 5 bosqich ochiq.</div>'+
           '</div>'+
           '<div style="margin-top:14px;padding:10px 12px;background:#f5f8fc;border:1.5px solid #dce3ea;border-radius:8px">'+
-            '<div style="font-weight:700;color:#0A1D3F;font-size:0.88rem;margin-bottom:8px">🔐 Ekran bloklash PIN</div>'+
+            '<div style="font-weight:700;color:#0A1D3F;font-size:0.88rem;margin-bottom:8px">🔐 Kirish PIN kodi</div>'+
+            '<div style="font-size:0.82rem;margin-bottom:8px">Hozirgi holat: <b style="color:'+(u&&u.pin?'#1a8a50':'#9b9b9b')+'">'+(u&&u.pin?'✅ PIN o\'rnatilgan':'❌ PIN yo\'q')+'</b></div>'+
             '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-              '<input type="text" id="uf-pin" maxlength="4" placeholder="4 raqam" autocomplete="off" inputmode="numeric" '+
+              '<input type="text" id="uf-pin" maxlength="8" placeholder="yangi PIN" autocomplete="off" inputmode="numeric" '+
                 'oninput="this.value=this.value.replace(/[^0-9]/g,\'\')" '+
-                'value="'+(u&&u.pin?esc(u.pin):'')+'" '+
-                'style="width:110px;padding:7px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:1.1rem;letter-spacing:8px;text-align:center;font-weight:700;outline:none">'+
-              '<span style="font-size:0.8rem;color:#556677">Hozirgi PIN: <b style="color:'+(u&&u.pin?'#1a8a50':'#9b9b9b')+'">'+(u&&u.pin?u.pin:'o\'rnatilmagan')+'</b></span>'+
+                'style="width:120px;padding:7px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:1.1rem;letter-spacing:6px;text-align:center;font-weight:700;outline:none">'+
+              (u&&u.pin?'<button type="button" onclick="document.getElementById(\'uf-pin-clear\').checked=!document.getElementById(\'uf-pin-clear\').checked;this.style.background=document.getElementById(\'uf-pin-clear\').checked?\'#fdd\':\'\';" style="padding:6px 10px;border:1.5px solid #fcc;border-radius:7px;background:#fff;cursor:pointer;font-size:0.78rem;color:#c0392b">🗑️ PIN o\'chirish</button><input type="checkbox" id="uf-pin-clear" style="display:none">':'<input type="checkbox" id="uf-pin-clear" style="display:none">'')+
             '</div>'+
-            '<div class="auth-hint" style="margin-top:5px">4 raqam kiriting — PIN o\'rnatiladi yoki o\'zgartiriladi. Bo\'sh qoldirsa — PIN o\'chiriladi.</div>'+
+            '<div class="auth-hint" style="margin-top:5px">Yangi PIN kiriting (4–8 raqam) — o\'zgartiriladi. Bo\'sh qoldirsangiz — o\'zgarmaydi. "PIN o\'chirish" belgilansa — PIN o\'chiriladi.</div>'+
           '</div>'+
           '<div class="auth-err" id="uf-err"></div>'+
         '</div>'+
@@ -20749,12 +20766,14 @@ updateProdBadge();
     var pages = Array.prototype.slice.call(document.querySelectorAll('#uf-pages input:checked')).map(function(c){ return c.value; });
     var prodStages = Array.prototype.slice.call(document.querySelectorAll('#uf-stages input:checked')).map(function(c){ return c.value; });
     var hideOmbor = !!(document.getElementById('uf-hideombor') && document.getElementById('uf-hideombor').checked);
-    var pinVal = ((document.getElementById('uf-pin')||{}).value||'').replace(/[^0-9]/g,'').substring(0,4);
+    var pinVal = ((document.getElementById('uf-pin')||{}).value||'').replace(/[^0-9]/g,'').substring(0,8);
+    var pinClear = !!(document.getElementById('uf-pin-clear') && document.getElementById('uf-pin-clear').checked);
+    function _hp(s){ s=String(s); var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return h.toString(36); }
     // Bosqich belgilangan bo'lsa — «🏭 Ishlab chiqarish» bo'limini avtomat ochamiz (aks holda cheklov ta'sir qilmaydi)
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
     if(!email || email.indexOf('@')<1) return fail("To'g'ri email kiriting");
-    if(pinVal.length>0 && pinVal.length<4) return fail("PIN 4 ta raqam bo'lishi kerak");
+    if(pinVal.length>0 && pinVal.length<4) return fail("PIN kamida 4 ta raqam bo'lishi kerak");
     if(email.toLowerCase()===ADMIN_EMAIL) role='admin';   // bosh admin doim admin
     var us = loadUsers();
     var dup = us.filter(function(x){ return String(x.email||'').toLowerCase()===email.toLowerCase() && x.id!==id; })[0];
@@ -20763,14 +20782,17 @@ updateProdBadge();
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: pinVal||'' });
+      var newPin = pinVal.length>=4 ? _hp(pinVal) : '';
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: newPin });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
-      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor; existing.pin = pinVal;
+      if(pinClear){ existing.pin = ''; }
+      else if(pinVal.length>=4){ existing.pin = _hp(pinVal); }
+      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
@@ -20909,7 +20931,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.67';
+  var APP_VERSION = '1.69';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
