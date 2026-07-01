@@ -4355,6 +4355,16 @@
       <p style="font-size:0.82rem;color:#888;margin:0 0 12px">Gofra, qog'oz va kley qiymatlari mavjud ombordan o'qiladi (faqat ko'rsatadi). Siyoh va boshqa materiallarni shu yerda qo'shing.</p>
       <div id="inv-raw-summary"></div>
     </div>
+    <!-- FAKT SANOQ -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+        <h2 style="margin:0"><sn>H-IV2s</sn>🔢 Fakt sanoq (xom ashyo)</h2>
+        <button class="inv-btn inv-btn-pri" onclick="INV.startRawCount()">🆕 Sanoqni boshlash</button>
+      </div>
+      <p style="font-size:0.82rem;color:#888;margin:0 0 12px">Haqiqiy sanalgan miqdorni kiriting — tizim farqni avtomatik ko'rsatadi. «Tasdiqlash»dan keyin ombor qoldig'i yangilanadi.</p>
+      <div id="inv-rawcount-table"><div style="color:#9aa7b8;text-align:center;padding:20px">«Sanoqni boshlash» tugmasini bosing — barcha xom ashyo ro'yxati chiqadi.</div></div>
+    </div>
+
     <div class="card" style="margin-bottom:16px">
       <div style="font-weight:800;color:#0A1D3F;margin-bottom:10px">➕ Material qo'shish (siyoh / boshqa)</div>
       <div class="inv-grid" style="margin-bottom:12px">
@@ -19538,6 +19548,117 @@ updateProdBadge();
     box.innerHTML=html;
   };
 
+  /* ════════ FAKT SANOQ — xom ashyo tezkor inventarizatsiyasi ════════ */
+  INV._rawCount = null;
+
+  INV.startRawCount = function(){
+    var sysInv = INV.systemInventory();
+    INV._rawCount = sysInv
+      .filter(function(l){ return l.key==='gofra'||l.key==='oqrulon'||l.key==='oqkesilgan'||l.key.indexOf('kley:')===0||l.key.indexOf('mat:')===0; })
+      .map(function(l){ var q=Math.round((+l.qty||0)*100)/100; return {key:l.key,label:l.label,unit:l.unit||'kg',system:q,counted:q}; });
+    INV.drawRawCount();
+    toast('Sanoq boshlandi — haqiqiy miqdorni kiriting','success');
+  };
+
+  INV.drawRawCount = function(){
+    var box=$('inv-rawcount-table'); if(!box) return;
+    var rows=INV._rawCount;
+    if(!rows||!rows.length){
+      box.innerHTML='<div style="color:#9aa7b8;text-align:center;padding:20px">«Sanoqni boshlash» tugmasini bosing — barcha xom ashyo ro\'yxati chiqadi.</div>';
+      return;
+    }
+    var html='<div class="inv-tablewrap"><table class="inv-t"><thead><tr>'
+      +'<th>Material</th><th>Tizim (ombor)</th><th>Fakt (siz yozing)</th><th>Farq</th><th></th>'
+      +'</tr></thead><tbody>';
+    var disc=0;
+    rows.forEach(function(r,i){
+      var sys=+r.system||0, cnt=+r.counted||0;
+      var diff=Math.round((cnt-sys)*100)/100;
+      var unit=r.unit||'kg';
+      if(diff!==0) disc++;
+      var diffTxt,diffColor,icon;
+      if(diff===0){ diffTxt='✅ Mos'; diffColor='#1a8a50'; icon='🟢'; }
+      else if(cnt===0&&sys>0){ diffTxt='❌ Topilmadi'; diffColor='#c0392b'; icon='🔴'; }
+      else if(diff<0){ diffTxt='⚠️ '+Math.abs(diff)+' '+unit+' kam'; diffColor='#c0392b'; icon='🔴'; }
+      else { diffTxt='➕ '+diff+' '+unit+' ortiqcha'; diffColor='#c2701a'; icon='🟡'; }
+      html+='<tr>'
+        +'<td><b>'+esc(r.label)+'</b></td>'
+        +'<td style="white-space:nowrap">'+num(sys)+' '+esc(unit)+'</td>'
+        +'<td><input type="number" step="0.01" min="0" value="'+cnt+'" class="inv-input" style="width:120px;padding:5px 8px" onchange="INV.setRawCounted('+i+',this.value)"></td>'
+        +'<td style="font-weight:700;color:'+diffColor+'">'+diffTxt+'</td>'
+        +'<td style="text-align:center;font-size:1.1rem">'+icon+'</td>'
+        +'</tr>';
+    });
+    html+='</tbody></table></div>';
+    html+='<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap">';
+    html+=(disc===0?'<span style="color:#1a8a50;font-weight:700">🟢 Hammasi mos — farq yo\'q</span>':'<span style="color:#c0392b;font-weight:700">⚠️ '+disc+' ta materialda farq bor</span>');
+    html+='<button class="inv-btn inv-btn-grn" onclick="INV.confirmRawCount()">🔒 Tasdiqlash — ombor yangilanadi</button>';
+    html+='<button class="inv-btn" onclick="INV._rawCount=null;INV.drawRawCount()">✖ Bekor</button></div>';
+    box.innerHTML=html;
+  };
+
+  INV.setRawCounted = function(idx,val){
+    if(!INV._rawCount) return;
+    INV._rawCount[idx].counted=parseFloat(val)||0;
+    INV.drawRawCount();
+  };
+
+  INV.confirmRawCount = function(){
+    var rows=INV._rawCount;
+    if(!rows||!rows.length){ toast('Avval sanoqni boshlang','warning'); return; }
+    var disc=rows.filter(function(r){ return Math.round(((+r.counted||0)-(+r.system||0))*100)/100!==0; }).length;
+    if(!confirm('Tasdiqlaysizmi?\n\n'+disc+' ta materialda farq bor.\nOmbor qoldig\'i haqiqiy songa yangilanadi.\nBu amalni qaytarib bo\'lmaydi.')) return;
+    var tW=false;
+    rows.forEach(function(r){
+      var cnt=+r.counted||0, sys=+r.system||0;
+      var diff=Math.round((cnt-sys)*100)/100;
+      if(diff===0) return;
+      if(r.key==='gofra'||r.key==='oqrulon'){
+        var arr=r.key==='gofra'?(typeof gofraRolls!=='undefined'?gofraRolls:[]):(typeof oqRulons!=='undefined'?oqRulons:[]);
+        var active=arr.filter(function(x){ return x.status==='mavjud'&&(+x.remaining||0)>0; });
+        var total=active.reduce(function(s,x){ return s+(+x.remaining||0); },0);
+        if(total>0){
+          var ratio=cnt/total;
+          active.forEach(function(x){
+            x.remaining=Math.max(0,Math.round((+x.remaining||0)*ratio*100)/100);
+            if(x.remaining<=0) x.status='sarflangan';
+          });
+          tW=true;
+        }
+      } else if(r.key==='oqkesilgan'){
+        var sheets=(typeof oqKesilgan!=='undefined'?oqKesilgan:[]).filter(function(x){ return (+x.remaining||0)>0; });
+        var totS=sheets.reduce(function(s,x){ return s+(+x.remaining||0); },0);
+        if(totS>0){
+          var ratioS=cnt/totS;
+          sheets.forEach(function(x){ x.remaining=Math.max(0,Math.round((+x.remaining||0)*ratioS)); });
+          tW=true;
+        }
+      } else if(r.key.indexOf('kley:')===0){
+        var ktype=r.key.slice(5);
+        if(diff<0){
+          if(typeof kleyRasxod!=='undefined') kleyRasxod.unshift({id:uid()+'kc',matType:ktype,qty:Math.abs(diff),date:todayISO(),note:'Fakt sanoq to\'g\'irlash'});
+          try{ if(typeof saveKleyRasxodLS==='function') saveKleyRasxodLS(); }catch(e){}
+        } else {
+          if(typeof boshqaStocks!=='undefined') boshqaStocks.unshift({id:uid()+'kp',matType:ktype,dir:'in',qty:diff,sum:0,date:todayISO(),from:'Fakt sanoq to\'g\'irlash'});
+          try{ if(typeof saveBoshqa==='function') saveBoshqa(); }catch(e){}
+        }
+      } else if(r.key.indexOf('mat:')===0){
+        var mid=r.key.slice(4);
+        for(var i=0;i<MAT.length;i++){ if(String(MAT[i].id)===String(mid)){ MAT[i].remaining=cnt; break; } }
+        saveMAT();
+      }
+    });
+    if(tW){ try{ if(typeof saveW==='function') saveW(); }catch(e){} }
+    ['renderGofraStock','renderOqStock','renderWarehouse','renderKleyOmbor','updateDashboard'].forEach(function(fn){
+      try{ if(typeof window[fn]==='function') window[fn](); }catch(e){}
+    });
+    INV._rawCount=null;
+    var box=$('inv-rawcount-table');
+    if(box) box.innerHTML='<div style="background:#eafaf1;border:1.5px solid #a9dfbf;border-radius:10px;padding:14px 18px;color:#1a8a50;font-weight:700">✅ Ombor qoldig\'i yangilandi! Yangi sanoq uchun «Sanoqni boshlash» ni bosing.</div>';
+    INV.renderRaw();
+    toast('✅ Ombor qoldig\'i yangilandi','success');
+  };
+
 })();
 </script>
 
@@ -21061,7 +21182,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.78';
+  var APP_VERSION = '1.80';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
