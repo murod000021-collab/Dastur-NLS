@@ -20560,6 +20560,7 @@ updateProdBadge();
     try{ sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); }catch(e){}
     try{ window.__SUPA_EMAIL=''; }catch(e){}
     setSessionId('');
+    try{ (window.Storage?Storage.prototype.removeItem:localStorage.removeItem).call(localStorage,'karoCloudSession'); }catch(e){}
     try{
       if(window.__SUPA && window.__SUPA.auth && window.__SUPA.auth.signOut){ window.__SUPA.auth.signOut().then(function(){ location.reload(); }).catch(function(){ location.reload(); }); return; }
     }catch(e){}
@@ -20880,7 +20881,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.60';
+  var APP_VERSION = '1.61';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
