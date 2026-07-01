@@ -91,7 +91,6 @@
       if(u&&u.email){ window.__SUPA_EMAIL=u.email; sessionStorage.setItem('karo_auth_email',u.email); if(u.id) sessionStorage.setItem('karo_auth_uid',u.id); }
       else {
         window.__SUPA_EMAIL=''; sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid');
-        if(_get(FLAG)==='1'){ _remove(FLAG); showLogin(); return; }
       }
     }catch(e){}
     try{ if(window.AUTH&&window.AUTH.onAuth) window.AUTH.onAuth(); }catch(e){}
@@ -305,7 +304,7 @@
     var c=document.createElement('div'); c.id='cloud-chip';
     c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
     c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib qulflash';
-    c.onclick=function(){ if(window.PIN&&window.PIN.lock){ window.PIN.lock(); } else if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
+    c.onclick=function(){ if(window.PIN&&window.PIN.lock&&localStorage.getItem('karo_pin')){ window.PIN.lock(); } else if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
   function chipRest(){ var c=document.getElementById('cloud-chip'); if(!c) return; if(rtOk){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib qulflash'; } else { c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; } }
@@ -20561,13 +20560,8 @@ updateProdBadge();
         if(s){ s.isActive=false; s.loggedOutAt=new Date().toISOString(); saveSessions(sessions); }
       }
     }catch(e){}
-    try{ sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); }catch(e){}
-    try{ window.__SUPA_EMAIL=''; }catch(e){}
     setSessionId('');
-    try{
-      if(window.__SUPA && window.__SUPA.auth && window.__SUPA.auth.signOut){ window.__SUPA.auth.signOut().then(function(){ location.reload(); }).catch(function(){ location.reload(); }); return; }
-    }catch(e){}
-    location.reload();
+    try{ openLogin(); }catch(e){ location.reload(); }
   }
 
   /* ---------- Sozlamalardagi foydalanuvchilar kartasi ---------- */
@@ -20884,7 +20878,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.64';
+  var APP_VERSION = '1.65';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
