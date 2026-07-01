@@ -20685,16 +20685,16 @@ updateProdBadge();
             '<div class="auth-pages-grid" id="uf-stages">'+stagesHtml+'</div>'+
             '<div class="auth-hint">Bosqich belgilasangiz «🏭 Ishlab chiqarish» avtomat ochiladi va xodim <b>faqat o\'sha bosqich(lar)ni</b> ko\'radi (boshqa bosqichlar va «tasdiq kutilayotgan zakazlar» ko\'rinmaydi). Har xil xodimga har xil bosqich bering. Hech bosqich belgilanmasa — barcha 5 bosqich ochiq.</div>'+
           '</div>'+
-          '<div style="margin-top:14px;padding:10px 12px;background:#f5f8fc;border:1.5px solid #dce3ea;border-radius:8px">'+
-            '<div style="font-weight:700;color:#0A1D3F;font-size:0.88rem;margin-bottom:8px">🔐 Kirish PIN kodi</div>'+
-            '<div style="font-size:0.82rem;margin-bottom:8px">Hozirgi holat: <b style="color:'+(u&&u.pin?'#1a8a50':'#9b9b9b')+'">'+(u&&u.pin?'✅ PIN o\'rnatilgan':'❌ PIN yo\'q')+'</b></div>'+
-            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-              '<input type="text" id="uf-pin" maxlength="8" placeholder="yangi PIN" autocomplete="off" inputmode="numeric" '+
-                'oninput="this.value=this.value.replace(/[^0-9]/g,\'\')" '+
-                'style="width:120px;padding:7px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:1.1rem;letter-spacing:6px;text-align:center;font-weight:700;outline:none">'+
-              (u&&u.pin?'<button type="button" onclick="document.getElementById(\'uf-pin-clear\').checked=!document.getElementById(\'uf-pin-clear\').checked;this.style.background=document.getElementById(\'uf-pin-clear\').checked?\'#fdd\':\'\';" style="padding:6px 10px;border:1.5px solid #fcc;border-radius:7px;background:#fff;cursor:pointer;font-size:0.78rem;color:#c0392b">🗑️ PIN o\'chirish</button><input type="checkbox" id="uf-pin-clear" style="display:none">':'<input type="checkbox" id="uf-pin-clear" style="display:none">')+
-            '</div>'+
-            '<div class="auth-hint" style="margin-top:5px">Yangi PIN kiriting (4–8 raqam) — o\'zgartiriladi. Bo\'sh qoldirsangiz — o\'zgarmaydi. "PIN o\'chirish" belgilansa — PIN o\'chiriladi.</div>'+
+          '<div style="margin-top:14px;padding:10px 12px;background:'+(u&&u.pin?'#f5f8fc':'#fff8f0')+';border:1.5px solid '+(u&&u.pin?'#dce3ea':'#f0b060')+';border-radius:8px">'+
+            '<div style="font-weight:700;color:#0A1D3F;font-size:0.88rem;margin-bottom:6px">🔐 Login paroli (PIN)</div>'+
+            (u&&u.pin
+              ? '<div style="font-size:0.81rem;color:#1a8a50;margin-bottom:8px;font-weight:700">✅ Parol o\'rnatilgan — o\'zgartirish uchun yangi raqam kiriting</div>'
+              : '<div style="font-size:0.81rem;color:#b35000;margin-bottom:8px;font-weight:700">⚠️ Parol yo\'q — xodim tizimga kira olmaydi! Yangi parol o\'rnating.</div>')+
+            '<input type="password" id="uf-pin" maxlength="8" placeholder="'+(u&&u.pin?'yangi parol (o\'zgartirish uchun)':'majburiy — 4–8 raqam')+'" autocomplete="new-password" inputmode="numeric" '+
+              'oninput="this.value=this.value.replace(/[^0-9]/g,\'\')" '+
+              'style="width:100%;max-width:260px;padding:8px 12px;border:1.5px solid '+(u&&u.pin?'#dce3ea':'#f0a060')+';border-radius:7px;font-size:1rem;outline:none;margin-bottom:4px">'+
+            '<div class="auth-hint" style="margin-top:2px">'+(u&&u.pin?'Bo\'sh qoldirsangiz — eski parol saqlanadi.':'Xodim bu raqam orqali tizimga kiradi. Keyin o\'zi o\'zgartira olmaydi.')+'</div>'+
+            '<input type="checkbox" id="uf-pin-clear" style="display:none">'+
           '</div>'+
           '<div class="auth-err" id="uf-err"></div>'+
         '</div>'+
@@ -20789,7 +20789,7 @@ updateProdBadge();
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
     if(!email || email.indexOf('@')<1) return fail("To'g'ri email kiriting");
-    if(pinVal.length>0 && pinVal.length<4) return fail("PIN kamida 4 ta raqam bo'lishi kerak");
+    if(pinVal.length>0 && pinVal.length<4) return fail("Parol kamida 4 ta raqam bo'lishi kerak");
     if(email.toLowerCase()===ADMIN_EMAIL) role='admin';   // bosh admin doim admin
     var us = loadUsers();
     var dup = us.filter(function(x){ return String(x.email||'').toLowerCase()===email.toLowerCase() && x.id!==id; })[0];
@@ -20797,17 +20797,17 @@ updateProdBadge();
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
+      if(pinVal.length<4) return fail("Yangi xodim uchun parol (4–8 raqam) majburiy");
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
-      var newPin = pinVal.length>=4 ? _hp(pinVal) : '';
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: newPin });
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: _hp(pinVal) });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
         if(admins.length<=1) return fail('Kamida bitta admin qolishi kerak');
       }
+      if(!existing.pin && pinVal.length<4) return fail("Bu xodimning paroli yo'q — yangi parol (4–8 raqam) kiriting");
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
-      if(pinClear){ existing.pin = ''; }
-      else if(pinVal.length>=4){ existing.pin = _hp(pinVal); }
+      if(pinVal.length>=4){ existing.pin = _hp(pinVal); }
       existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor;
     }
     saveUsers(us);
@@ -20947,7 +20947,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.72';
+  var APP_VERSION = '1.73';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
