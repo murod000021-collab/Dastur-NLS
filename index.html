@@ -20487,7 +20487,7 @@ updateProdBadge();
       if(!pv) return fail('Parol kiriting');
       var us=loadUsers();
       var u=us.filter(function(x){ return (x.login||x.email||'').toLowerCase()===lv.toLowerCase(); })[0];
-      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; if(!rem){ localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); } return fail("Login yoki parol noto'g'ri"); }
+      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; localStorage.removeItem('karo_rem_pass'); if(!rem){ localStorage.removeItem('karo_rem_login'); } return fail("Login yoki parol notoʻgʻri. Agar admin parolni oʻzgartirgan boʻlsa — yangi parolni kiriting."); }
       if(rem){ localStorage.setItem('karo_rem_login',lv); localStorage.setItem('karo_rem_pass',pv); }
       else { localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); }
       var nm=u.name; setSessionId(u.id); registerDeviceSession(u.id); closeOverlay(); applyPermissions(); renderUserList();
@@ -20755,7 +20755,12 @@ updateProdBadge();
     var us=loadUsers(); var u=us.filter(function(x){ return x.id===id; })[0]; if(!u) return;
     u.pin=_hpA(p);
     saveUsers(us); closeModal(); renderUserList();
-    miniToast('✅ '+esc(u.name||u.email)+' parol yangilandi');
+    // Agar bu xodimning eski paroli "saqlab qolish" bilan saqlangan bo'lsa, uni tozalaymiz.
+    // Bu Supabase orqali sinxronlanib, xodim qurilmasida ham bo'sh qoladi va eski parol auto-to'ldirilmaydi.
+    var _remL=(localStorage.getItem('karo_rem_login')||'').trim().toLowerCase();
+    var _uL=(u.login||u.email||'').trim().toLowerCase();
+    if(_remL && _uL && _remL===_uL){ localStorage.setItem('karo_rem_pass',''); }
+    miniToast('✅ '+esc(u.name||u.email)+' paroli yangilandi — xodimga yangi parolni xabar qiling!');
   }
 
   function openResetAllPin(){
@@ -20789,7 +20794,9 @@ updateProdBadge();
     var us=loadUsers(); var hash=_hpA(p);
     us.forEach(function(u){ u.pin=hash; });
     saveUsers(us); closeModal(); renderUserList();
-    miniToast('✅ Barcha '+us.length+' ta xodim paroli yangilandi');
+    // Barcha xodimlar paroli almashtirildi — saqlangan eski parolni tozalaymiz
+    localStorage.setItem('karo_rem_pass','');
+    miniToast('✅ Barcha '+us.length+' ta xodim paroli yangilandi — xodimlarga yangi parolni xabar qiling!');
   }
 
   /* ---------- Qurilmalar / sessions modali ---------- */
@@ -21026,7 +21033,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.74';
+  var APP_VERSION = '1.75';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
