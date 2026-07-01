@@ -304,11 +304,11 @@
     if(document.getElementById('cloud-chip')) return;
     var c=document.createElement('div'); c.id='cloud-chip';
     c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
-    c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish';
-    c.onclick=function(){ if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
+    c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib qulflash';
+    c.onclick=function(){ if(window.PIN&&window.PIN.lock){ window.PIN.lock(); } else if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
-  function chipRest(){ var c=document.getElementById('cloud-chip'); if(!c) return; if(rtOk){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib chiqish'; } else { c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; } }
+  function chipRest(){ var c=document.getElementById('cloud-chip'); if(!c) return; if(rtOk){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib qulflash'; } else { c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; } }
   function chip(s){ var c=document.getElementById('cloud-chip'); if(!c) return; if(s==='ok'){ c.style.background='#eafaf1';c.style.color='#1a8a50';c.style.borderColor='#b7e4c7';c.textContent='☁️ Saqlandi'; clearTimeout(c._t); c._t=setTimeout(function(){ chipRest(); },1200); } else if(s==='err'){ c.style.background='#fdecea';c.style.color='#c0392b';c.style.borderColor='#f5c6cb';c.textContent='☁️ Saqlanmadi'; } }
   function warn(m){ rtOk=false; chipInit(); var c=document.getElementById('cloud-chip'); if(c){ c.style.background='#fff7e6';c.style.color='#7a5b00';c.style.borderColor='#f0c674';c.textContent='☁️ Bulut ishlamayapti'; c.title=m||'Bulutga ulanmadi'; } }
 
@@ -1741,7 +1741,8 @@
       var el=document.getElementById('nls-pin-lock');
       if(el){ el.style.display='flex'; }
     },
-    resetTimer:resetTimer
+    resetTimer:resetTimer,
+    lock:lockNow
   };
   document.addEventListener('keydown',function(e){
     var lock=document.getElementById('nls-pin-lock');
@@ -20883,7 +20884,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.63';
+  var APP_VERSION = '1.64';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
