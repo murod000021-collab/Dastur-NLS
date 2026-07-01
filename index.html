@@ -20487,7 +20487,9 @@ updateProdBadge();
       if(!pv) return fail('Parol kiriting');
       var us=loadUsers();
       var u=us.filter(function(x){ return (x.login||x.email||'').toLowerCase()===lv.toLowerCase(); })[0];
-      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; localStorage.removeItem('karo_rem_pass'); if(!rem){ localStorage.removeItem('karo_rem_login'); } return fail("Login yoki parol notoʻgʻri. Agar admin parolni oʻzgartirgan boʻlsa — yangi parolni kiriting."); }
+      if(!u){ return fail("Login topilmadi — to'g'ri login nomini kiriting"); }
+      if(!u.pin){ return fail("Parol o'rnatilmagan — admin sozlamalardan parol o'rnatsin"); }
+      if(hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; localStorage.removeItem('karo_rem_pass'); if(!rem){ localStorage.removeItem('karo_rem_login'); } return fail("Parol noto'g'ri. Admin parolni o'zgartirgan bo'lsa — yangi parolni kiriting."); }
       if(rem){ localStorage.setItem('karo_rem_login',lv); localStorage.setItem('karo_rem_pass',pv); }
       else { localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); }
       var nm=u.name; setSessionId(u.id); registerDeviceSession(u.id); closeOverlay(); applyPermissions(); renderUserList();
@@ -20928,18 +20930,29 @@ updateProdBadge();
     else if(a==='sess-logout-all') logoutAllDeviceSessions(el.getAttribute('data-uid'));
   });
 
-  /* ---------- ishga tushirish (Supabase Auth = yagona login) ---------- */
+  /* ---------- Login ekranini ko'rsatish (agar hech kim kirmagan bo'lsa) ---------- */
+  function _showAuthIfNeeded(){
+    if(currentUser()) return;            // Foydalanuvchi allaqachon kirib bo'lgan
+    var us = loadUsers();
+    if(!us.length) openSetup();         // Hech qanday hisob yo'q — birinchi marta sozlash
+    else openLogin();                   // Hisoblar bor — login shaklini ko'rsat
+  }
+
+  /* ---------- ishga tushirish ---------- */
   function boot(){
     patchShowPage(); patchShowPTab();
     ALL_PAGES = computePages();
     injectSettingsCard();
     setupOmborObserver();
-    // Har 2 daqiqada sessiya faolligini yangilaymiz va admin logout qilganini tekshiramiz
     setInterval(function(){ if(currentUser()){ updateMyActivity(); checkMySession(); } }, 120000);
     if(applyAuthState()) return;
     var tries=0;
     var iv=setInterval(function(){
-      if(applyAuthState() || ++tries>40){ clearInterval(iv); }
+      if(applyAuthState() || ++tries>40){
+        clearInterval(iv);
+        // 40 marta urinib bo'ldi: agar hali ham hech kim kirmagan bo'lsa login ekranini ko'rsatamiz
+        _showAuthIfNeeded();
+      }
     }, 300);
   }
   if(document.readyState==='complete'){ setTimeout(boot, 20); }
@@ -20960,7 +20973,24 @@ updateProdBadge();
     }catch(e){}
   })();
 
-  window.AUTH = { logout: logout, apply: applyPermissions, users: loadUsers, onAuth: function(){ try{ applyAuthState(); }catch(e){} } };
+  window.AUTH = {
+    logout: logout,
+    apply: applyPermissions,
+    users: loadUsers,
+    onAuth: function(){
+      try{
+        if(applyAuthState()) return;
+        // Supabase sessiyasi yo'q — karo_session orqali oldingi sessiyani tekshiramiz
+        if(currentUser()){
+          // Xodim oldin kiran — sessiyasini tiklaymiz
+          applyPermissions(); renderUserList();
+        } else {
+          // Hech kim kirmagan — Supabase ma'lumotlari yuklanishini kuting, so'ng login
+          setTimeout(function(){ _showAuthIfNeeded(); }, 2000);
+        }
+      }catch(e){}
+    }
+  };
 })();
 </script>
 <!-- ===== /NLS LOGIN MODULI ===== -->
@@ -21033,7 +21063,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.75';
+  var APP_VERSION = '1.76';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
