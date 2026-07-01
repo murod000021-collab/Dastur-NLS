@@ -1858,6 +1858,7 @@
   <button onclick="showPage('trash',this)" id="nav-trash"><sn>N15</sn>🗑 O'chirilgan buyurtmalar</button>
   <button onclick="showPage('pin',this)" id="nav-pin"><sn>N15b</sn>🔒 PIN</button>
   <button onclick="showPage('sozlamalar',this)"><sn>N16</sn>⚙️ Sozlamalar</button>
+  <button id="nav-logout-btn" style="display:none;color:#c0392b;border-bottom-color:transparent" onclick="if(window.AUTH)AUTH.logout()">🚪 Chiqish</button>
 </nav>
 
 <main>
@@ -20538,15 +20539,16 @@ updateProdBadge();
 
   /* ---------- header chip + chiqish ---------- */
   function renderUserBox(){
+    var navBtn = document.getElementById('nav-logout-btn');
+    var u = currentUser();
+    if(navBtn) navBtn.style.display = u ? '' : 'none';
     var host = document.querySelector('header');
     if(!host) return;
-    var u = currentUser();
     var box = document.getElementById('auth-userbox');
     if(!u){ if(box && box.parentNode) box.parentNode.removeChild(box); return; }
     if(!box){ box = document.createElement('div'); box.id='auth-userbox'; host.appendChild(box); }
     var rl = u.role==='admin' ? 'Admin' : (u.role==='ish_boshqaruvchi' ? 'Ish boshqaruvchi' : 'Xodim');
-    box.innerHTML = '<span class="auth-chip">&#128100; '+esc(u.name)+' &middot; '+rl+'</span><button class="auth-logout" id="auth-logout-btn">Chiqish</button>';
-    var b = document.getElementById('auth-logout-btn'); if(b) b.onclick = logout;
+    box.innerHTML = '<span class="auth-chip">&#128100; '+esc(u.name)+' &middot; '+rl+'</span>';
   }
   function logout(){
     try{
@@ -20880,7 +20882,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.58';
+  var APP_VERSION = '1.59';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
