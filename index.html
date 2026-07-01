@@ -20460,30 +20460,46 @@ updateProdBadge();
     ensureOverlay();
     pinBuf=''; pinUser=null;
     setTitle('Tizimga kirish','Login va parolni kiriting');
+    var savedLogin=localStorage.getItem('karo_rem_login')||'';
+    var savedPass=localStorage.getItem('karo_rem_pass')||'';
+    var isRemembered=!!(savedLogin&&savedPass);
     setBody(
       '<div class="auth-form">'+
-        '<label>Login<input id="al-login" autocomplete="off" placeholder="loginni kiriting" spellcheck="false"></label>'+
+        '<label>Login<input id="al-login" autocomplete="off" placeholder="loginni kiriting" spellcheck="false" value="'+savedLogin.replace(/"/g,'&quot;')+'"></label>'+
         '<label>Parol<input type="password" id="al-pass" autocomplete="off" placeholder="parolni kiriting"></label>'+
+        '<label style="flex-direction:row;align-items:center;gap:8px;font-size:.82rem;color:#5E7191;cursor:pointer;font-weight:600">'+
+          '<input type="checkbox" id="al-remember" style="width:16px;height:16px;cursor:pointer;accent-color:#1457C4"'+(isRemembered?' checked':'')+'>'+
+          'Login va parolni saqlab qolish'+
+        '</label>'+
         '<div class="auth-err" id="al-err"></div>'+
         '<button class="auth-primary" id="al-submit">Kirish</button>'+
       '</div>'
     );
+    var passEl=document.getElementById('al-pass');
+    if(passEl&&savedPass) passEl.value=savedPass;
     function sub(){
       var lv=(document.getElementById('al-login')||{value:''}).value.trim();
       var pv=(document.getElementById('al-pass')||{value:''}).value;
+      var rem=(document.getElementById('al-remember')||{}).checked;
       var errEl=document.getElementById('al-err');
       function fail(m){ if(errEl) errEl.textContent=m; var box=document.querySelector('#auth-overlay .auth-box'); if(box){ box.classList.remove('auth-shake'); void box.offsetWidth; box.classList.add('auth-shake'); } }
       if(!lv) return fail('Login kiriting');
       if(!pv) return fail('Parol kiriting');
       var us=loadUsers();
       var u=us.filter(function(x){ return (x.login||x.email||'').toLowerCase()===lv.toLowerCase(); })[0];
-      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; return fail("Login yoki parol noto'g'ri"); }
+      if(!u||!u.pin||hashPin(pv)!==u.pin){ var p=document.getElementById('al-pass'); if(p) p.value=''; if(!rem){ localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); } return fail("Login yoki parol noto'g'ri"); }
+      if(rem){ localStorage.setItem('karo_rem_login',lv); localStorage.setItem('karo_rem_pass',pv); }
+      else { localStorage.removeItem('karo_rem_login'); localStorage.removeItem('karo_rem_pass'); }
       var nm=u.name; setSessionId(u.id); closeOverlay(); applyPermissions(); renderUserList();
       miniToast('Xush kelibsiz, '+nm);
     }
     var btn=document.getElementById('al-submit'); if(btn) btn.onclick=sub;
     var pw=document.getElementById('al-pass'); if(pw) pw.addEventListener('keydown',function(e){ if(e.key==='Enter') sub(); });
-    var lg=document.getElementById('al-login'); if(lg){ lg.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var p=document.getElementById('al-pass'); if(p) p.focus(); } }); setTimeout(function(){ try{lg.focus();}catch(e){} },50); }
+    var lg=document.getElementById('al-login');
+    if(lg){
+      lg.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var p=document.getElementById('al-pass'); if(p) p.focus(); } });
+      setTimeout(function(){ try{ if(savedLogin) document.getElementById('al-pass').focus(); else lg.focus(); }catch(e){} },50);
+    }
   }
 
   function selectUser(id){
@@ -20931,7 +20947,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.70';
+  var APP_VERSION = '1.71';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
