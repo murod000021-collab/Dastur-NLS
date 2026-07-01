@@ -302,8 +302,8 @@
   function chipInit(){
     if(document.getElementById('cloud-chip')) return;
     var c=document.createElement('div'); c.id='cloud-chip';
-    c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#eafaf1;border:1px solid #b7e4c7;color:#1a8a50;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
-    c.textContent='☁️ Bulut ishlayapti'; c.title='Bulut ishlayapti — bosib qulflash';
+    c.style.cssText='position:fixed;right:10px;bottom:10px;z-index:100000;background:#f0f4f8;border:1px solid #c8d5e3;color:#556677;font-size:.72rem;font-weight:700;padding:5px 10px;border-radius:20px;font-family:Segoe UI,sans-serif;cursor:pointer';
+    c.textContent='☁️ Ulanmoqda...'; c.title='Bulutga ulanmoqda';
     c.onclick=function(){ if(window.PIN&&window.PIN.lock&&localStorage.getItem('karo_pin')){ window.PIN.lock(); } else if(confirm('Bulutdan chiqasizmi? Keyin qaytadan email/parol kiritasiz.')){ _remove(FLAG); sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); if(sb) sb.auth.signOut().then(function(){ location.reload(); }); else location.reload(); } };
     document.body.appendChild(c);
   }
@@ -322,7 +322,10 @@
   // reseed() — admin asosiy qurilmadan bulutni shu qurilma ma'lumoti bilan MAJBURIY qayta to'ldiradi (zaxira yo'l).
   window.__CLOUD={ del:delKeys, pull:function(){ pullAll(); }, reseed:function(){ uploadAll(true); }, ready:function(){ return ready; }, saveLocal:function(k,v){ _set(k,v); } };
   window.addEventListener('online',function(){ if(ready){ flush(); pullAll(); } });
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+  // Chip har doim sahifa ochilishi bilan ko'rinadi — Supabase holatini kutmasdan
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){ chipInit(); boot(); });
+  } else { chipInit(); boot(); }
 })();
 </script>
 <link href="./karobka_dastur_files/css2" rel="stylesheet">
@@ -20805,6 +20808,21 @@ updateProdBadge();
   if(document.readyState==='complete'){ setTimeout(boot, 20); }
   else { window.addEventListener('load', function(){ setTimeout(boot, 20); }); }
 
+  // Admin PIN ni 0070 ga o'zgartiruvchi bir martalik migrasiya
+  (function(){
+    var flag='karo_admin_pin_v0070';
+    if(localStorage.getItem(flag)) return;
+    try{
+      var us=JSON.parse(localStorage.getItem('karo_users')||'[]');
+      var changed=false;
+      for(var i=0;i<us.length;i++){
+        if(us[i].role==='admin'){ us[i].pin=hashPin('0070'); changed=true; }
+      }
+      if(changed){ localStorage.setItem('karo_users',JSON.stringify(us)); }
+      localStorage.setItem(flag,'1');
+    }catch(e){}
+  })();
+
   window.AUTH = { logout: logout, apply: applyPermissions, users: loadUsers, onAuth: function(){ try{ applyAuthState(); }catch(e){} } };
 })();
 </script>
@@ -20878,7 +20896,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.65';
+  var APP_VERSION = '1.66';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
