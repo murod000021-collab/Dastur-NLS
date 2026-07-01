@@ -20942,7 +20942,7 @@ updateProdBadge();
     ALL_PAGES = computePages();
     injectSettingsCard();
     setupOmborObserver();
-    setInterval(function(){ if(currentUser()){ updateMyActivity(); checkMySession(); } }, 120000);
+    setInterval(function(){ if(currentUser()){ updateMyActivity(); } }, 120000); /* checkMySession olib tashlandi — foydalanuvchi qo'lda chiqmaguncha tizimda qoladi */
     if(applyAuthState()) return;
     var tries=0;
     var iv=setInterval(function(){
