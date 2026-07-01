@@ -772,7 +772,7 @@
   }
   @media (max-width: 420px) {
     .form-grid { grid-template-columns: 1fr; }
-    header > div:last-child { display: none; } /* juda tor ekranda raqamlar yashirinadi */
+    #brand-phones { display: none; } /* juda tor ekranda raqamlar yashirinadi */
   }
 
   /* ===== KALKULYATOR ===== */
@@ -921,7 +921,7 @@
 
   }
   @media (max-width: 600px) {
-    header > div:last-child { display: none !important; }
+    #brand-phones { display: none !important; }
     header { justify-content: space-between; }
   }
   @media (max-width: 480px) {
@@ -1301,7 +1301,7 @@
     header img { height: 26px !important; }
     header #currentDate { display: none !important; }
     header #currentTime { font-size: 0.7rem !important; letter-spacing: 0.5px !important; }
-    header > div:last-child { display: none !important; }
+    #brand-phones { display: none !important; }
 
     /* ── Nav — gorizontal scroll ── */
     nav {
@@ -19981,7 +19981,7 @@ updateProdBadge();
   .auth-primary:active{transform:scale(.99)}
   .auth-hint{font-size:.74rem;color:#9aa7bd;margin-top:2px;line-height:1.5}
 
-  #auth-userbox{margin-top:6px;display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+  #auth-userbox{margin-top:0;margin-left:auto;display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;flex-shrink:0}
   .auth-chip{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 12px;font-size:.8rem;font-weight:600}
   .auth-logout{background:rgba(255,255,255,.92);color:#0E2F6B;border:none;border-radius:20px;padding:5px 14px;font-size:.8rem;font-weight:800;cursor:pointer;transition:.15s}
   .auth-logout:hover{background:#fff}
@@ -20538,7 +20538,7 @@ updateProdBadge();
 
   /* ---------- header chip + chiqish ---------- */
   function renderUserBox(){
-    var host = document.getElementById('brand-phones') || document.querySelector('header');
+    var host = document.querySelector('header');
     if(!host) return;
     var u = currentUser();
     var box = document.getElementById('auth-userbox');
@@ -20557,7 +20557,7 @@ updateProdBadge();
         if(s){ s.isActive=false; s.loggedOutAt=new Date().toISOString(); saveSessions(sessions); }
       }
     }catch(e){}
-    try{ sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); sessionStorage.removeItem('karoCloudSession'); }catch(e){}
+    try{ sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); }catch(e){}
     try{ window.__SUPA_EMAIL=''; }catch(e){}
     setSessionId('');
     try{
@@ -20880,7 +20880,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.57';
+  var APP_VERSION = '1.58';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
