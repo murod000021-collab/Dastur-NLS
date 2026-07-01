@@ -20638,7 +20638,7 @@ updateProdBadge();
         '<div class="auth-row-main">'+
           '<span class="auth-av">'+esc(letter)+'</span>'+
           '<div><div class="auth-row-name">'+esc(u.name)+' <span class="auth-badge '+(u.role==='admin'?'admin':(u.role==='ish_boshqaruvchi'?'manager':'employee'))+'">'+roleTxt+'</span></div>'+
-          '<div class="auth-row-sub">📧 '+esc(u.email||u.login||'—')+' &middot; '+access+me+sessTxt+'</div></div>'+
+          '<div class="auth-row-sub">👤 '+esc(u.login||u.email||'—')+' &middot; '+access+me+sessTxt+'</div></div>'+
         '</div>'+
         '<div class="auth-row-actions">'+
           '<button data-authui="sessions" data-id="'+u.id+'" title="Faol qurilmalar" style="font-size:.77rem;padding:4px 9px;background:#e8f0fd;border:1.5px solid #aecbf5;border-radius:7px;cursor:pointer;color:#1457c4;font-weight:700;white-space:nowrap">📱 Qurilmalar</button>'+
@@ -20668,9 +20668,8 @@ updateProdBadge();
       '<div class="auth-modal-box">'+
         '<h3>'+(u?'Xodimni tahrirlash':'Yangi xodim')+'</h3>'+
         '<div class="auth-form">'+
-          '<label>Email (Supabase Authentication\'dagi bilan bir xil)<input id="uf-email" type="email" autocomplete="off" placeholder="xodim@email.com" value="'+(u?esc(u.email||''):'')+'"></label>'+
+          '<label>Login (foydalanuvchi nomi)<input id="uf-login" autocomplete="off" placeholder="masalan: alisher" value="'+(u?esc(u.login||u.email||''):'')+'"></label>'+
           '<label>Ism (ixtiyoriy)<input id="uf-name" autocomplete="off" value="'+(u?esc(u.name||''):'')+'"></label>'+
-          '<div class="auth-hint" style="margin:-2px 0 2px">Avval Supabase &rarr; Authentication &rarr; Users\'da shu email bilan account oching, keyin shu yerda bo\'limlarni belgilang. Bosh admin: <b>'+esc(ADMIN_EMAIL)+'</b>.</div>'+
           '<div><div class="auth-pages-head" style="margin-top:4px"><b>Rol</b></div>'+
             '<div class="auth-roles">'+
               '<label><input type="radio" name="uf-role" value="employee" '+(!isAdmin&&!isIB?'checked':'')+'> Xodim</label>'+
@@ -20859,7 +20858,7 @@ updateProdBadge();
   function saveUserForm(){
     var btn = document.querySelector('#auth-modal [data-authui="save"]');
     var id = btn ? btn.getAttribute('data-id') : '';
-    var email = val('uf-email').trim();
+    var login = val('uf-login').trim().toLowerCase();
     var name = val('uf-name').trim();
     var roleEl = document.querySelector('#auth-modal input[name="uf-role"]:checked');
     var role = roleEl ? roleEl.value : 'employee';
@@ -20872,18 +20871,17 @@ updateProdBadge();
     // Bosqich belgilangan bo'lsa — «🏭 Ishlab chiqarish» bo'limini avtomat ochamiz (aks holda cheklov ta'sir qilmaydi)
     if(role==='employee' && prodStages.length && pages.indexOf('production')===-1){ pages.push('production'); }
     var err = document.getElementById('uf-err'); function fail(m){ if(err) err.textContent = m; }
-    if(!email || email.indexOf('@')<1) return fail("To'g'ri email kiriting");
+    if(!login) return fail("Login kiriting (masalan: alisher)");
     if(pinVal.length>0 && pinVal.length<4) return fail("Parol kamida 4 ta raqam bo'lishi kerak");
-    if(email.toLowerCase()===ADMIN_EMAIL) role='admin';   // bosh admin doim admin
     var us = loadUsers();
-    var dup = us.filter(function(x){ return String(x.email||'').toLowerCase()===email.toLowerCase() && x.id!==id; })[0];
-    if(dup) return fail('Bu email allaqachon ro\'yxatda');
+    var dup = us.filter(function(x){ return (x.login||x.email||'').toLowerCase()===login && x.id!==id; })[0];
+    if(dup) return fail("Bu login allaqachon ro'yxatda");
     if(role==='employee' && pages.length===0) return fail("Kamida bitta bo'lim belgilang");
     var existing = id ? us.filter(function(x){ return x.id===id; })[0] : null;
     if(!existing){
       if(pinVal.length<4) return fail("Yangi xodim uchun parol (4–8 raqam) majburiy");
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
-      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), email:email, name:(name||email.split('@')[0]), login:email, role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: _hp(pinVal) });
+      us.push({ id:'u'+Date.now()+''+Math.floor(Math.random()*900+100), login:login, name:(name||login), role:role, pages: noPages?[]:pages, prodStages: noPages?[]:prodStages, hideOmborSums: noPages?false:hideOmbor, pin: _hp(pinVal) });
     } else {
       if(existing.role==='admin' && role!=='admin'){
         var admins = us.filter(function(x){ return x.role==='admin'; });
@@ -20892,7 +20890,7 @@ updateProdBadge();
       if(!existing.pin && pinVal.length<4) return fail("Bu xodimning paroli yo'q — yangi parol (4–8 raqam) kiriting");
       var noPages = (role==='admin' || role==='ish_boshqaruvchi');
       if(pinVal.length>=4){ existing.pin = _hp(pinVal); }
-      existing.email = email; existing.name = (name||email.split('@')[0]); existing.login = email; existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor;
+      existing.login = login; existing.name = (name||existing.name||login); existing.role = role; existing.pages = noPages?[]:pages; existing.prodStages = noPages?[]:prodStages; existing.hideOmborSums = noPages?false:hideOmbor;
     }
     saveUsers(us);
     closeModal(); renderUserList(); applyPermissions();
@@ -21063,7 +21061,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.76';
+  var APP_VERSION = '1.77';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
