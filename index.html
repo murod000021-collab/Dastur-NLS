@@ -89,7 +89,10 @@
     try{
       var u=s&&s.user;
       if(u&&u.email){ window.__SUPA_EMAIL=u.email; sessionStorage.setItem('karo_auth_email',u.email); if(u.id) sessionStorage.setItem('karo_auth_uid',u.id); }
-      else { window.__SUPA_EMAIL=''; sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid'); }
+      else {
+        window.__SUPA_EMAIL=''; sessionStorage.removeItem('karo_auth_email'); sessionStorage.removeItem('karo_auth_uid');
+        if(_get(FLAG)==='1'){ _remove(FLAG); showLogin(); return; }
+      }
     }catch(e){}
     try{ if(window.AUTH&&window.AUTH.onAuth) window.AUTH.onAuth(); }catch(e){}
   }
@@ -20880,7 +20883,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.62';
+  var APP_VERSION = '1.63';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
