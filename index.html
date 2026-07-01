@@ -20613,7 +20613,10 @@ updateProdBadge();
       '<h2>&#128100; Foydalanuvchilar &mdash; login va ruxsatlar</h2>'+
       '<p class="auth-note">Xodimlaringizga alohida login yarating va ularga qaysi bo\'limlar ochiq bo\'lishini belgilang. Siz bosh adminsiz &mdash; barcha bo\'limlar sizda ko\'rinadi.</p>'+
       '<div id="auth-user-list"></div>'+
-      '<button class="auth-add-btn" data-authui="add">&#10133; Yangi xodim qo\'shish</button>';
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'+
+        '<button class="auth-add-btn" data-authui="add" style="margin:0">&#10133; Yangi xodim qo\'shish</button>'+
+        '<button data-authui="resetall" style="padding:9px 18px;background:#fff8e1;border:1.5px solid #ffcc02;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;color:#7a5b00">🔑 Barchaga parol berish</button>'+
+      '</div>';
     host.insertBefore(card, host.firstChild);
   }
   function renderUserList(){
@@ -20637,6 +20640,7 @@ updateProdBadge();
         '</div>'+
         '<div class="auth-row-actions">'+
           '<button data-authui="sessions" data-id="'+u.id+'" title="Faol qurilmalar" style="font-size:.77rem;padding:4px 9px;background:#e8f0fd;border:1.5px solid #aecbf5;border-radius:7px;cursor:pointer;color:#1457c4;font-weight:700;white-space:nowrap">📱 Qurilmalar</button>'+
+          '<button data-authui="resetpin" data-id="'+u.id+'" title="Parolni almashtirish" style="font-size:.77rem;padding:4px 9px;background:'+(u.pin?'#f0fff4':'#fff3e0')+';border:1.5px solid '+(u.pin?'#7ecf9d':'#ffb74d')+';border-radius:7px;cursor:pointer;color:'+(u.pin?'#1a7a3a':'#b35000')+';font-weight:700;white-space:nowrap">'+(u.pin?'🔑 Parol':'⚠️ Parol yo\'q')+'</button>'+
           '<button data-authui="edit" data-id="'+u.id+'" title="Tahrirlash">&#9999;&#65039;</button>'+
           '<button data-authui="del" data-id="'+u.id+'" title="O\'chirish">&#128465;&#65039;</button>'+
         '</div>'+
@@ -20716,6 +20720,77 @@ updateProdBadge();
     Array.prototype.slice.call(document.querySelectorAll('#uf-pages input[type=checkbox]')).forEach(function(c){ c.checked = flag; });
   }
   function closeModal(){ var m = document.getElementById('auth-modal'); if(m && m.parentNode) m.parentNode.removeChild(m); }
+
+  function _hpA(s){ s=String(s); var h=5381; for(var i=0;i<s.length;i++){ h=(((h<<5)+h)^s.charCodeAt(i))>>>0; } return h.toString(36); }
+
+  function openResetPin(id){
+    var us=loadUsers(); var u=us.filter(function(x){ return x.id===id; })[0]; if(!u) return;
+    closeModal();
+    var m=document.createElement('div'); m.id='auth-modal';
+    m.innerHTML='<div class="auth-modal-box" style="max-width:360px">'+
+      '<h3>🔑 Parolni almashtirish</h3>'+
+      '<div class="auth-form">'+
+        '<div style="font-size:0.88rem;font-weight:700;color:#0A1D3F;margin-bottom:12px">👤 '+esc(u.name||u.email)+'</div>'+
+        '<label>Yangi parol (4–8 raqam)<input type="password" id="rp-pin" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="masalan: 1234" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"></label>'+
+        '<label>Parolni takrorlang<input type="password" id="rp-pin2" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="qayta kiriting" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"></label>'+
+        '<div class="auth-err" id="rp-err"></div>'+
+      '</div>'+
+      '<div class="auth-modal-actions">'+
+        '<button class="auth-btn-cancel" data-authui="cancel">Bekor</button>'+
+        '<button class="auth-btn-save" data-authui="resetpin-save" data-id="'+esc(id)+'">✅ Saqlash</button>'+
+      '</div>'+
+    '</div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',function(e){ if(e.target===m) closeModal(); });
+    setTimeout(function(){ var i=document.getElementById('rp-pin'); if(i) i.focus(); },50);
+  }
+
+  function saveResetPin(id){
+    var p=(document.getElementById('rp-pin')||{value:''}).value.replace(/[^0-9]/g,'');
+    var p2=(document.getElementById('rp-pin2')||{value:''}).value.replace(/[^0-9]/g,'');
+    var err=document.getElementById('rp-err');
+    function fail(m){ if(err) err.textContent=m; }
+    if(p.length<4) return fail("Kamida 4 ta raqam kiriting");
+    if(p!==p2) return fail("Parollar mos kelmadi");
+    var us=loadUsers(); var u=us.filter(function(x){ return x.id===id; })[0]; if(!u) return;
+    u.pin=_hpA(p);
+    saveUsers(us); closeModal(); renderUserList();
+    miniToast('✅ '+esc(u.name||u.email)+' parol yangilandi');
+  }
+
+  function openResetAllPin(){
+    closeModal();
+    var m=document.createElement('div'); m.id='auth-modal';
+    m.innerHTML='<div class="auth-modal-box" style="max-width:380px">'+
+      '<h3>🔑 Barchaga yangi parol berish</h3>'+
+      '<div class="auth-form">'+
+        '<div class="auth-hint" style="margin-bottom:10px">⚠️ Barcha xodimlarning paroli shu raqamga almashtiriladi. Xodimlarga yangi parolni xabar qiling.</div>'+
+        '<label>Yangi parol (4–8 raqam)<input type="password" id="ra-pin" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="masalan: 1234" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"></label>'+
+        '<label>Parolni takrorlang<input type="password" id="ra-pin2" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="qayta kiriting" oninput="this.value=this.value.replace(/[^0-9]/g,\'\')"></label>'+
+        '<div class="auth-err" id="ra-err"></div>'+
+      '</div>'+
+      '<div class="auth-modal-actions">'+
+        '<button class="auth-btn-cancel" data-authui="cancel">Bekor</button>'+
+        '<button class="auth-btn-save" data-authui="resetall-save">✅ Barchasiga berish</button>'+
+      '</div>'+
+    '</div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',function(e){ if(e.target===m) closeModal(); });
+    setTimeout(function(){ var i=document.getElementById('ra-pin'); if(i) i.focus(); },50);
+  }
+
+  function saveResetAllPin(){
+    var p=(document.getElementById('ra-pin')||{value:''}).value.replace(/[^0-9]/g,'');
+    var p2=(document.getElementById('ra-pin2')||{value:''}).value.replace(/[^0-9]/g,'');
+    var err=document.getElementById('ra-err');
+    function fail(m){ if(err) err.textContent=m; }
+    if(p.length<4) return fail("Kamida 4 ta raqam kiriting");
+    if(p!==p2) return fail("Parollar mos kelmadi");
+    var us=loadUsers(); var hash=_hpA(p);
+    us.forEach(function(u){ u.pin=hash; });
+    saveUsers(us); closeModal(); renderUserList();
+    miniToast('✅ Barcha '+us.length+' ta xodim paroli yangilandi');
+  }
 
   /* ---------- Qurilmalar / sessions modali ---------- */
   function openSessionsModal(userId){
@@ -20837,6 +20912,10 @@ updateProdBadge();
     else if(a==='sel-all') toggleAllPages(true);
     else if(a==='sel-none') toggleAllPages(false);
     else if(a==='sessions') openSessionsModal(el.getAttribute('data-id'));
+    else if(a==='resetpin') openResetPin(el.getAttribute('data-id'));
+    else if(a==='resetpin-save') saveResetPin(el.getAttribute('data-id'));
+    else if(a==='resetall') openResetAllPin();
+    else if(a==='resetall-save') saveResetAllPin();
     else if(a==='sess-close'){ var sm=document.getElementById('auth-sessions-modal'); if(sm&&sm.parentNode) sm.parentNode.removeChild(sm); }
     else if(a==='sess-logout') logoutDeviceSession(el.getAttribute('data-sessid'));
     else if(a==='sess-logout-all') logoutAllDeviceSessions(el.getAttribute('data-uid'));
@@ -20947,7 +21026,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.73';
+  var APP_VERSION = '1.74';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
