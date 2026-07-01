@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="NLS Print">
 <meta name="application-name" content="NLS Print">
-<script>
+<script>  
 (function(){
   // 1) Service Worker registratsiya
   if('serviceWorker' in navigator){
@@ -20676,7 +20676,7 @@ updateProdBadge();
               '<input type="text" id="uf-pin" maxlength="8" placeholder="yangi PIN" autocomplete="off" inputmode="numeric" '+
                 'oninput="this.value=this.value.replace(/[^0-9]/g,\'\')" '+
                 'style="width:120px;padding:7px 10px;border:1.5px solid #dce3ea;border-radius:7px;font-size:1.1rem;letter-spacing:6px;text-align:center;font-weight:700;outline:none">'+
-              (u&&u.pin?'<button type="button" onclick="document.getElementById(\'uf-pin-clear\').checked=!document.getElementById(\'uf-pin-clear\').checked;this.style.background=document.getElementById(\'uf-pin-clear\').checked?\'#fdd\':\'\';" style="padding:6px 10px;border:1.5px solid #fcc;border-radius:7px;background:#fff;cursor:pointer;font-size:0.78rem;color:#c0392b">🗑️ PIN o\'chirish</button><input type="checkbox" id="uf-pin-clear" style="display:none">':'<input type="checkbox" id="uf-pin-clear" style="display:none">'')+
+              (u&&u.pin?'<button type="button" onclick="document.getElementById(\'uf-pin-clear\').checked=!document.getElementById(\'uf-pin-clear\').checked;this.style.background=document.getElementById(\'uf-pin-clear\').checked?\'#fdd\':\'\';" style="padding:6px 10px;border:1.5px solid #fcc;border-radius:7px;background:#fff;cursor:pointer;font-size:0.78rem;color:#c0392b">🗑️ PIN o\'chirish</button><input type="checkbox" id="uf-pin-clear" style="display:none">':'<input type="checkbox" id="uf-pin-clear" style="display:none">')+
             '</div>'+
             '<div class="auth-hint" style="margin-top:5px">Yangi PIN kiriting (4–8 raqam) — o\'zgartiriladi. Bo\'sh qoldirsangiz — o\'zgarmaydi. "PIN o\'chirish" belgilansa — PIN o\'chiriladi.</div>'+
           '</div>'+
@@ -20931,7 +20931,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.69';
+  var APP_VERSION = '1.70';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
