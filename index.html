@@ -10544,14 +10544,16 @@ function approveOqRequest(reqId) {
   var dona  = donaInp  ? (parseInt((donaInp.value || '').replace(/\s/g,'')) || 0) : 0;
   var price = priceInp ? (parseFloat((priceInp.value || '').replace(/\s/g,'')) || 0) : 0;
   var total = totalInp ? (parseFloat((totalInp.value || '').replace(/\s/g,'')) || Math.round(kg * price)) : Math.round(kg * price);
-  var firma = firmaInp ? firmaInp.value.trim() : (req.oqFirma || '');
+  var ozimizdaCb = document.getElementById('oqreq-ozimizda-' + reqId);
+  var ozimizda = ozimizdaCb ? !!ozimizdaCb.checked : !!req.ozimizda;
+  var firma = ozimizda ? "O'zimizda bor (ombor)" : (firmaInp ? firmaInp.value.trim() : (req.oqFirma || ''));
   if (!firma) {
     if (firmaInp) { firmaInp.style.borderColor = '#e02020'; firmaInp.focus(); }
-    showAlert('Yetkazuvchi / firma nomini kiriting!', 'warning');
+    showAlert('Yetkazuvchi / firma nomini kiriting yoki "O\'zimizda bor"ni belgilang!', 'warning');
     return;
   }
-  if (firmaInp) firmaInp.style.borderColor = '#90caf9';
-  if (!total || total <= 0) {
+  if (firmaInp) firmaInp.style.borderColor = ozimizda ? '#81c784' : '#90caf9';
+  if (!ozimizda && (!total || total <= 0)) {
     if (totalInp) { totalInp.style.borderColor = '#e02020'; totalInp.focus(); }
     showAlert('Jami summani kiriting!', 'warning');
     return;
@@ -10567,7 +10569,8 @@ function approveOqRequest(reqId) {
   var ogr = ord ? (parseFloat(ord.gramaj) || 0) : 0;
   var sizeStr = (ofw && ofh) ? (ofw + '×' + ofh + ' sm') : ('So\'rovdan #' + req.orderNum);
 
-  _oqPending = { reqId:reqId, req:req, kg:kg, dona:dona, total:total, firma:firma, perKg:perKg, today:today, todayISO:todayISO, sizeStr:sizeStr, ofw:ofw, ofh:ofh, ogr:ogr };
+  _oqPending = { reqId:reqId, req:req, kg:kg, dona:dona, total:total, firma:firma, perKg:perKg, today:today, todayISO:todayISO, sizeStr:sizeStr, ofw:ofw, ofh:ofh, ogr:ogr, ozimizda:ozimizda };
+  if (ozimizda) { finalizeOqApprove(); return; }  // o'z omborimizdan — to'lov/qarz yo'q, to'g'ridan-to'g'ri qabul
   showOqPayModal();
 }
 
@@ -10654,11 +10657,11 @@ function finalizeOqApprove() {
   arrivals.unshift({
     id: ts+1, date: today, supplier: firma, fayl: 'Buyurtma #' + req.orderNum,
     matType: 'oq-kesilgan', matLabel: 'Oq qog\'oz (kesilgan)', count: 1, totalQty: kg,
-    note: req.client + ' uchun' + (perKg ? ' · ' + perKg.toLocaleString() + ' so\'m/kg' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m'
+    note: req.client + ' uchun' + (d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan' : ((perKg ? ' · ' + perKg.toLocaleString() + ' so\'m/kg' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m'))
   });
-  // 3. Yetkazuvchi qarzi (qarz)
+  // 3. Yetkazuvchi qarzi (qarz) — "O'zimizda bor" bo'lsa qarz yozilmaydi
   var qarzNote = 'Oq qog\'oz · Buyurtma #' + req.orderNum + ' · ' + req.client + (req.orderName ? ' — ' + req.orderName : '');
-  yetqarzlar.unshift({
+  if (!d.ozimizda) yetqarzlar.unshift({
     id: ts+2, date: today, supplier: firma, type: 'qarz',
     matType: "Oq qog'oz (kesilgan)", amount: total, kg: kg, perKg: perKg,
     detail: 'Buyurtma #' + req.orderNum + ' · ' + req.client, note: qarzNote
@@ -10691,8 +10694,9 @@ function finalizeOqApprove() {
   var modal = document.getElementById('oq-pay-modal'); if (modal) modal.remove();
   _oqPending = null;
 
-  var payMsg = payMade ? (' · ' + spaceFmt(payAmount) + ' so\'m to\'landi (' + (payType === 'perech' ? '🏦 Perechisleniye' : '💵 Naqt') + ')') : ' · To\'lov amalga oshirilmadi (qarz qoldi)';
-  showAlert('✅ Omborga qabul qilindi! ' + kg + ' kg' + (dona ? ' · ' + dona.toLocaleString() + ' varaq' : '') + ' · Jami: ' + spaceFmt(total) + ' so\'m' + payMsg, 'success');
+  var payMsg = d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan (qarz yozilmadi)'
+    : (payMade ? (' · ' + spaceFmt(payAmount) + ' so\'m to\'landi (' + (payType === 'perech' ? '🏦 Perechisleniye' : '💵 Naqt') + ')') : ' · To\'lov amalga oshirilmadi (qarz qoldi)');
+  showAlert('✅ Omborga qabul qilindi! ' + kg + ' kg' + (dona ? ' · ' + dona.toLocaleString() + ' varaq' : '') + (total ? ' · Jami: ' + spaceFmt(total) + ' so\'m' : '') + payMsg, 'success');
 }
 
 function rejectOqRequest(reqId) {
@@ -10782,6 +10786,29 @@ function closeOqFirmaAC(reqId) {
   if (ac) ac.style.display = 'none';
 }
 
+// 🏭 "O'zimizda bor" — qog'oz o'z omborimizdan olinishini belgilaydi (firma so'ralmaydi, qarz yozilmaydi)
+function oqReqOzimizdaToggle(reqId) {
+  var req = oqRequests.find(function(r){ return r.id === reqId; });
+  var cb  = document.getElementById('oqreq-ozimizda-' + reqId);
+  var inp = document.getElementById('oqreq-firma-' + reqId);
+  var checked = !!(cb && cb.checked);
+  if (req) { req.ozimizda = checked; saveOqRequests(); }
+  if (inp) {
+    if (checked) {
+      inp.value = "O'zimizda bor (ombor)";
+      inp.disabled = true;
+      inp.style.background = '#e8f5e9';
+      inp.style.borderColor = '#81c784';
+      closeOqFirmaAC(reqId);
+    } else {
+      inp.value = (req && req.oqFirma) || '';
+      inp.disabled = false;
+      inp.style.background = '#fff';
+      inp.style.borderColor = '#90caf9';
+    }
+  }
+}
+
 function renderOqRequests() {
   var wrap = document.getElementById('oqreq-list');
   if (!wrap) return;
@@ -10813,6 +10840,7 @@ function renderOqRequests() {
           if (r.orderName) html += '<span style="font-size:0.72rem;color:#5E7191;background:#f0f4f8;border-radius:5px;padding:1px 7px">' + r.orderName + '</span>';
           if (r.qty) html += '<span style="font-size:0.7rem;color:#0d47a1;background:#e3f2fd;border-radius:5px;padding:1px 7px;font-weight:700">' + r.qty.toLocaleString() + ' dona</span>';
           if (r.paperKg) html += '<span style="font-size:0.7rem;color:#1b5e20;background:#e8f5e9;border-radius:5px;padding:1px 7px;font-weight:700">' + r.paperKg + ' kg</span>';
+          if (r.ozimizda) html += '<span style="font-size:0.7rem;color:#fff;background:#2e7d32;border-radius:5px;padding:1px 7px;font-weight:700">🏭 O\'zimizda bor</span>';
         html += '</div>';
         html += '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">';
           html += '<span style="font-size:0.7rem;color:#aaa">📅 ' + r.date + '</span>';
@@ -10873,13 +10901,17 @@ function renderOqRequests() {
         html += '<div style="display:flex;flex-direction:column;gap:4px;margin-top:10px;position:relative;max-width:420px">';
         html += '<label style="font-size:0.72rem;font-weight:700;color:#1565c0;text-transform:uppercase">🏢 Kimdan olingan</label>';
         html += '<input id="oqreq-firma-' + r.id + '" type="text" autocomplete="off"'
-              + ' value="' + (r.oqFirma || '') + '"'
+              + ' value="' + (r.ozimizda ? 'O\'zimizda bor (ombor)' : (r.oqFirma || '')) + '"'
+              + (r.ozimizda ? ' disabled' : '')
               + ' placeholder="Firma / yetkazuvchi nomi"'
               + ' oninput="showOqFirmaAC(' + r.id + ',this.value)"'
               + ' onfocus="showOqFirmaAC(' + r.id + ',this.value)"'
               + ' onblur="setTimeout(function(){closeOqFirmaAC(' + r.id + ')},200)"'
-              + ' style="width:100%;padding:8px 12px;border:2px solid #90caf9;border-radius:8px;font-size:0.92rem;outline:none;color:#1a3c5e">';
+              + ' style="width:100%;padding:8px 12px;border:2px solid ' + (r.ozimizda ? '#81c784' : '#90caf9') + ';border-radius:8px;font-size:0.92rem;outline:none;color:#1a3c5e;background:' + (r.ozimizda ? '#e8f5e9' : '#fff') + '">';
         html += '<div id="oqreq-firma-ac-' + r.id + '" style="display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1.5px solid #90caf9;border-radius:9px;box-shadow:0 4px 16px rgba(0,0,0,0.13);z-index:9999;max-height:200px;overflow-y:auto"></div>';
+        html += '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;cursor:pointer;background:#e8f5e9;border:1.5px solid #81c784;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:700;color:#1b5e20;user-select:none">';
+        html += '<input type="checkbox" id="oqreq-ozimizda-' + r.id + '"' + (r.ozimizda ? ' checked' : '') + ' onchange="oqReqOzimizdaToggle(' + r.id + ')" style="width:17px;height:17px;cursor:pointer;accent-color:#2e7d32">';
+        html += '🏭 O\'zimizda bor (ombordagi qog\'oz)</label>';
         html += '</div>';
 
         html += '<div style="font-size:0.76rem;color:#aaa;margin-top:6px">📅 ' + r.date + '</div>';
@@ -20792,7 +20824,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.83';
+  var APP_VERSION = '1.84';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
