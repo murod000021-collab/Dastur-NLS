@@ -1651,11 +1651,62 @@
     /* Splash logosini header logosidan oladi — bazani ikki marta yozmaymiz */
     (function(){ try{ var L=document.getElementById('nls-splash-logo'), H=document.querySelector('header img[alt="NLS"]'); if(L&&H&&H.getAttribute('src')) L.src=H.getAttribute('src'); }catch(e){} })();
   </script>
+  <button id="screen-lock-btn" title="Ekranni qulflash — logo ko'rinib turadi" onclick="if(window.SCREENLOCK)SCREENLOCK.lock()">🔒</button>
   <div id="brand-phones" style="flex:1;text-align:right;font-size:0.9rem;opacity:0.9;line-height:1.8">
     <div>📞 99 044 20 20</div>
     <div>📞 97 002 77 77</div>
   </div>
 </header>
+
+<!-- ════════ 🔒 EKRAN QULFI — tugma bosilganda butun ekranda logo chiqib turadi (ekran doim yoniq rejim uchun) ════════ -->
+<style>
+  #screen-lock-btn{background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.35);color:#fff;border-radius:12px;
+    padding:9px 13px;font-size:1.1rem;cursor:pointer;line-height:1;transition:.15s;margin-left:10px}
+  #screen-lock-btn:hover{background:rgba(255,255,255,.28)}
+  #screen-lock-btn:active{transform:scale(.94)}
+  #nls-lock{position:fixed;inset:0;z-index:3000000;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:radial-gradient(1200px 760px at 50% 38%, #1d3f7d 0%, #0c2350 48%, #07142e 100%)}
+  #nls-lock .nls-lock-inner{display:flex;flex-direction:column;align-items:center;gap:26px;animation:nlsLockDrift 90s ease-in-out infinite}
+  #nls-lock img{height:150px;max-width:72vw;object-fit:contain;filter:drop-shadow(0 10px 34px rgba(0,0,0,.55))}
+  #nls-lock .nls-lock-time{color:#cfe0ff;font-size:2rem;font-weight:800;letter-spacing:6px;font-variant-numeric:tabular-nums}
+  #nls-lock .nls-lock-hint{position:absolute;bottom:26px;left:0;right:0;text-align:center;color:rgba(207,224,255,.45);font-size:.85rem;font-weight:600;letter-spacing:1px}
+  /* Logo sekin siljib turadi — doim yoniq ekranda bir joyda qotib qolmasligi (burn-in) uchun */
+  @keyframes nlsLockDrift{0%,100%{transform:translate(0,0)}25%{transform:translate(3vw,-3vh)}50%{transform:translate(0,4vh)}75%{transform:translate(-3vw,-2vh)}}
+</style>
+<script>
+(function(){
+  'use strict';
+  var KEY='nls_locked';   // sessionStorage — karo_ emas, bulutga sinxronlanmaydi, faqat shu oynaga tegishli
+  var el=null, timeT=null, lockedAt=0;
+  function pad(n){ return (n<10?'0':'')+n; }
+  function tick(){ var t=el&&el.querySelector('.nls-lock-time'); if(!t) return; var d=new Date(); t.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
+  function lock(){
+    if(el) return;
+    try{ sessionStorage.setItem(KEY,'1'); }catch(e){}
+    lockedAt=Date.now();
+    el=document.createElement('div'); el.id='nls-lock'; el.setAttribute('aria-hidden','true');
+    var logoSrc=''; try{ var H=document.querySelector('header img[alt="NLS"]'); if(H) logoSrc=H.getAttribute('src')||''; }catch(e){}
+    el.innerHTML='<div class="nls-lock-inner">'
+      +(logoSrc?'<img src="'+logoSrc+'" alt="NLS">':'<div style="color:#fff;font-size:3rem;font-weight:900">NLS BOX</div>')
+      +'<div class="nls-lock-time">--:--:--</div></div>'
+      +'<div class="nls-lock-hint">🔒 Qulflangan — ochish uchun ekranga bosing</div>';
+    el.addEventListener('click',function(){ if(Date.now()-lockedAt<400) return; unlock(); });
+    document.body.appendChild(el);
+    tick(); timeT=setInterval(tick,1000);
+    try{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); }catch(e){}
+  }
+  function unlock(){
+    try{ sessionStorage.removeItem(KEY); }catch(e){}
+    clearInterval(timeT); timeT=null;
+    if(el&&el.parentNode) el.parentNode.removeChild(el);
+    el=null;
+  }
+  window.SCREENLOCK={ lock:lock, unlock:unlock };
+  // F5 / qayta yuklanganda ham qulf saqlanib qoladi
+  function boot(){ try{ if(sessionStorage.getItem(KEY)==='1') lock(); }catch(e){} }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
 
 <nav>
   <button onclick="showPage('dashboard',this)"><sn>N1</sn>🏠 Bosh sahifa</button>
@@ -10570,7 +10621,7 @@ function approveOqRequest(reqId) {
   var sizeStr = (ofw && ofh) ? (ofw + '×' + ofh + ' sm') : ('So\'rovdan #' + req.orderNum);
 
   _oqPending = { reqId:reqId, req:req, kg:kg, dona:dona, total:total, firma:firma, perKg:perKg, today:today, todayISO:todayISO, sizeStr:sizeStr, ofw:ofw, ofh:ofh, ogr:ogr, ozimizda:ozimizda };
-  if (ozimizda) { finalizeOqApprove(); return; }  // o'z omborimizdan — to'lov/qarz yo'q, to'g'ridan-to'g'ri qabul
+  if (ozimizda) { showOqOmborModal(); return; }  // o'z omborimizdan — qaysi qog'ozdan ishlatilganini so'raymiz
   showOqPayModal();
 }
 
@@ -10624,6 +10675,102 @@ function oqPayPtChange() {
   if (pl) { pl.style.borderColor = pt.value === 'perech' ? '#1457c4' : '#dce3ea'; pl.style.background = pt.value === 'perech' ? '#f0f5ff' : '#fff'; }
 }
 
+// 🏭 "O'zimizda bor" — ombordagi qaysi qog'ozdan ishlatilganini so'raydigan oyna
+function showOqOmborModal() {
+  var d = _oqPending; if (!d) return;
+  var old = document.getElementById('oq-ombor-modal'); if (old) old.remove();
+  var ov = document.createElement('div');
+  ov.id = 'oq-ombor-modal';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:9900;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:18px;padding:24px;max-width:480px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4)">'
+    +'<div style="font-size:1.05rem;font-weight:800;color:#0A1D3F;margin-bottom:6px">🏭 O\'zimizdagi qog\'ozdan</div>'
+    +'<div style="font-size:0.84rem;color:#888;margin-bottom:16px">Buyurtma #'+d.req.orderNum+' · '+tgEsc(d.req.client)+' — qaysi qog\'ozdan ishlatilganini belgilang. Tanlangan qog\'ozdan ayiriladi va 📉 Rasxod jurnaliga yoziladi.</div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px">Material</label>'
+    +'<select id="oqombor-mat" onchange="oqOmborFillRolls()" style="width:100%;padding:9px 11px;border:1.5px solid #dce3ea;border-radius:8px;font-size:0.9rem;box-sizing:border-box">'
+    +'<option value="oq-kesilgan">📄 Oq qog\'oz (kesilgan)</option>'
+    +'<option value="oq-rulon">📜 Oq qog\'oz (rulon)</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:10px"><label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px">Qaysi qog\'oz / rulon ishlatilgan</label>'
+    +'<select id="oqombor-roll" style="width:100%;padding:9px 11px;border:1.5px solid #dce3ea;border-radius:8px;font-size:0.9rem;box-sizing:border-box"></select></div>'
+    +'<div style="margin-bottom:14px"><label style="font-size:0.8rem;font-weight:700;color:#555;display:block;margin-bottom:4px">Ishlatilgan miqdor (kg)</label>'
+    +'<input type="number" id="oqombor-kg" value="'+(d.kg||'')+'" min="0" step="0.1" style="width:100%;padding:9px 11px;border:1.5px solid #dce3ea;border-radius:8px;font-size:0.9rem;box-sizing:border-box"></div>'
+    +'<div style="display:flex;gap:10px;margin-top:4px">'
+    +'<button onclick="finalizeOqOmbor()" style="flex:1;padding:11px;background:#2e7d32;color:#fff;border:none;border-radius:9px;font-weight:700;font-size:0.92rem;cursor:pointer">✅ Belgilash va qabul qilish</button>'
+    +'<button onclick="document.getElementById(\'oq-ombor-modal\').remove();_oqPending=null" style="padding:11px 16px;background:#f0f4f8;color:#555;border:none;border-radius:9px;font-weight:700;font-size:0.9rem;cursor:pointer">✖ Bekor</button>'
+    +'</div>'
+    +'<button onclick="oqOmborSkip()" style="width:100%;margin-top:10px;padding:8px;background:none;border:none;color:#999;font-size:0.8rem;cursor:pointer;text-decoration:underline">Belgilamasdan qabul qilish (ombordan ayirilmaydi)</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  oqOmborFillRolls();
+}
+
+function oqOmborFillRolls() {
+  var mat = (document.getElementById('oqombor-mat') || {}).value || 'oq-kesilgan';
+  var sel = document.getElementById('oqombor-roll');
+  if (!sel) return;
+  var arr = mat === 'oq-rulon' ? oqRulons : oqKesilgan;
+  var opts = arr.filter(function(r){
+    var left = mat === 'oq-kesilgan' ? (parseFloat(r.calcKgRemaining) || 0) : (r.remaining || 0);
+    return r.status === 'mavjud' && left > 0;
+  }).map(function(r){
+    var left = mat === 'oq-kesilgan' ? (parseFloat(r.calcKgRemaining) || 0) : (r.remaining || 0);
+    var label = mat === 'oq-kesilgan'
+      ? (r.label || r.format || '—')
+      : (r.format ? r.format + ' sm' : '—') + ' · ' + (r.gramm || '') + ' gr';
+    label += (r.supplier ? ' · ' + r.supplier : '') + ' — qoldiq: ' + (+left).toFixed(1) + ' kg';
+    return '<option value="' + r.id + '">' + label + '</option>';
+  });
+  sel.innerHTML = opts.length ? opts.join('') : '<option value="">— Mavjud qog\'oz yo\'q —</option>';
+}
+
+// Belgilamasdan qabul qilish — ombordan hech narsa ayirilmaydi
+function oqOmborSkip() {
+  var m = document.getElementById('oq-ombor-modal'); if (m) m.remove();
+  finalizeOqApprove();
+}
+
+function finalizeOqOmbor() {
+  var d = _oqPending; if (!d) return;
+  var mat = (document.getElementById('oqombor-mat') || {}).value || 'oq-kesilgan';
+  var arr = mat === 'oq-rulon' ? oqRulons : oqKesilgan;
+  var rid = (document.getElementById('oqombor-roll') || {}).value || '';
+  var r = arr.find(function(x){ return String(x.id) === String(rid); });
+  if (!r) { showAlert('Qaysi qog\'ozdan ishlatilganini tanlang!', 'warning'); return; }
+  var kg = parseFloat((document.getElementById('oqombor-kg') || {}).value) || 0;
+  if (kg <= 0) { showAlert('Ishlatilgan miqdorni (kg) kiriting!', 'warning'); return; }
+  var matLabel, rollLabel, qoldi, srcPerKg = 0;
+  if (mat === 'oq-kesilgan') {
+    var avail = parseFloat(r.calcKgRemaining) || 0;
+    var take = Math.min(kg, avail);
+    r.calcKgRemaining = +(avail - take).toFixed(2);
+    if (r.calcKg > 0 && r.qty > 0) r.remaining = Math.max(0, +(r.qty * r.calcKgRemaining / r.calcKg).toFixed(1));
+    if (r.calcKgRemaining <= 0.05) { r.calcKgRemaining = 0; r.remaining = 0; r.status = 'sarflangan'; }
+    qoldi = r.calcKgRemaining; kg = take;
+    matLabel = "Oq qog'oz (kesilgan)";
+    rollLabel = (r.label || r.format || '') + (r.supplier ? ' · ' + r.supplier : '');
+    srcPerKg = r.perKg || 0;
+  } else {
+    var take2 = Math.min(kg, r.remaining || 0);
+    r.remaining = +((r.remaining || 0) - take2).toFixed(2);
+    if (r.remaining <= 0.05) { r.remaining = Math.max(0, r.remaining); r.status = 'sarflangan'; }
+    qoldi = r.remaining; kg = take2;
+    matLabel = "Oq qog'oz (rulon)";
+    rollLabel = (r.format ? r.format + ' sm' : '') + ' · ' + (r.gramm || '') + ' gr' + (r.supplier ? ' · ' + r.supplier : '');
+    srcPerKg = r.pricePerKg || 0;
+  }
+  logRasxod({
+    sabab: '🏭 Buyurtma #' + d.req.orderNum + ' · ' + d.req.client + ' · O\'zimizdagi qog\'ozdan',
+    mat: matLabel, roll: rollLabel, kg: +kg.toFixed(2), qoldi: +(+qoldi).toFixed(2)
+  });
+  d.omborRoll = rollLabel;
+  // Summa kiritilmagan bo'lsa — manba qog'oz narxidan hisoblanadi (ombor qiymati to'g'ri qolishi uchun)
+  if ((!d.total || d.total <= 0) && srcPerKg > 0 && d.kg > 0) { d.perKg = Math.round(srcPerKg); d.total = Math.round(d.kg * srcPerKg); }
+  var m = document.getElementById('oq-ombor-modal'); if (m) m.remove();
+  if (typeof renderRasxod === 'function') renderRasxod();
+  finalizeOqApprove();
+}
+
 function finalizeOqApprove() {
   var d = _oqPending; if (!d) return;
   var req = d.req, reqId = d.reqId;
@@ -10657,7 +10804,7 @@ function finalizeOqApprove() {
   arrivals.unshift({
     id: ts+1, date: today, supplier: firma, fayl: 'Buyurtma #' + req.orderNum,
     matType: 'oq-kesilgan', matLabel: 'Oq qog\'oz (kesilgan)', count: 1, totalQty: kg,
-    note: req.client + ' uchun' + (d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan' : ((perKg ? ' · ' + perKg.toLocaleString() + ' so\'m/kg' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m'))
+    note: req.client + ' uchun' + (d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan' + (d.omborRoll ? ' (' + d.omborRoll + ')' : '') : ((perKg ? ' · ' + perKg.toLocaleString() + ' so\'m/kg' : '') + ' · Jami: ' + total.toLocaleString() + ' so\'m'))
   });
   // 3. Yetkazuvchi qarzi (qarz) — "O'zimizda bor" bo'lsa qarz yozilmaydi
   var qarzNote = 'Oq qog\'oz · Buyurtma #' + req.orderNum + ' · ' + req.client + (req.orderName ? ' — ' + req.orderName : '');
@@ -10694,7 +10841,7 @@ function finalizeOqApprove() {
   var modal = document.getElementById('oq-pay-modal'); if (modal) modal.remove();
   _oqPending = null;
 
-  var payMsg = d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan (qarz yozilmadi)'
+  var payMsg = d.ozimizda ? ' · 🏭 O\'zimizdagi qog\'ozdan' + (d.omborRoll ? ' — ' + d.omborRoll + ' (rasxodga yozildi)' : ' (qarz yozilmadi)')
     : (payMade ? (' · ' + spaceFmt(payAmount) + ' so\'m to\'landi (' + (payType === 'perech' ? '🏦 Perechisleniye' : '💵 Naqt') + ')') : ' · To\'lov amalga oshirilmadi (qarz qoldi)');
   showAlert('✅ Omborga qabul qilindi! ' + kg + ' kg' + (dona ? ' · ' + dona.toLocaleString() + ' varaq' : '') + (total ? ' · Jami: ' + spaceFmt(total) + ' so\'m' : '') + payMsg, 'success');
 }
@@ -20824,7 +20971,7 @@ updateProdBadge();
 <script>
 (function(){
   'use strict';
-  var APP_VERSION = '1.84';
+  var APP_VERSION = '1.86';
   var LS_USERS    = 'karo_users';
   var LS_SESS     = 'karo_session';
   var LS_CHLOG    = 'karo_changelog';
